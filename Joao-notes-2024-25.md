@@ -1,8 +1,10 @@
+## Resources:
+[NUCLEO-F767ZI](https://www.st.com/en/evaluation-tools/nucleo-f767zi.html)  
 [Original Google Doc](https://docs.google.com/document/d/11fnf1_0UNkNoBxbQVy7jODhYvrkaA3BpCkaGHNBnnio/edit?usp=sharing)
 
 --------
 ## Ethernet Debugging & Configuration Guide for STM32F7 with lwIP and FreeRTOS
-This guide is intended for engineers working on an STM32F7 project using FreeRTOS and the lwIP stack. In our current implementation, the static IP is set up correctly (e.g. 10.0.0.200/255.255.255.0 with gateway 10.0.0.1), but the MAC address is not configured properly—the board’s MAC appears as all zeros in the ARP table. This document explains the relevant components, what each file does, and provides specific next steps and debugging measures.
+This guide is intended for engineers working on an STM32F7 project using [FreeRTOS](https://www.freertos.org) (an popular embedded system real time operating system) and the lwIP stack (light weight IP: independent implementation of the TCP/IP protocol suite). In our current implementation, the static IP is set up correctly (e.g. 10.0.0.200/255.255.255.0 with gateway 10.0.0.1), but the MAC address is not configured properly—the board’s MAC appears as all zeros in the ARP table. This document explains the relevant components, what each file does, and provides specific next steps and debugging measures.
 
 ## 1. Overview of the Project Architecture
 Hardware and Ethernet PHY:
@@ -10,7 +12,7 @@ Hardware and Ethernet PHY:
 
 
 lwIP TCP/IP Stack:
- lwIP is a lightweight TCP/IP stack that handles IP, ARP, ICMP (e.g., ping), UDP, TCP, DHCP (if enabled), and more. It provides the core network protocols that let your board communicate over Ethernet.
+ lwIP is a lightweight TCP/IP stack that handles IP, ARP, ICMP (e.g., ping), UDP, TCP, DHCP (if enabled) (all of these are transport layer protocols), and more. It provides the core network protocols that let your board communicate over Ethernet.
 
 
 FreeRTOS Integration:
@@ -21,10 +23,10 @@ Static IP Configuration:
  The static IP, netmask, and gateway are set in the auto-generated lwip.c file. In our case, the intended configuration is:
 
 
-IP: 10.0.0.200
-Netmask: 255.255.255.0
-Gateway: 10.0.0.1
-Issue at Hand:
+IP: 10.0.0.200  
+Netmask: 255.255.255.0  
+Gateway: 10.0.0.1  
+Issue at Hand:  
  Although the static IP appears to be set correctly in lwip.c, when the board is running, the MAC address printed in the ARP table appears as all zeros (00-00-00-00-00-00). Without a valid MAC address, the board will not respond properly to ARP requests or ping tests.
 
 
