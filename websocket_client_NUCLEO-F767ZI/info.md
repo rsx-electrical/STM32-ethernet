@@ -32,21 +32,18 @@ https://www.st.com/en/development-tools/stm32cubeide.html
   git clone https://github.com/<your-username>/<your-repo-name>.git
   ```
 
-3. Extract rsx_ethernet.zip
-
-4. Open the project in STM32CubeIDE
+3. Open the project in STM32CubeIDE
 - Open your file explorer and navigate to: rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide
 - Click on the .cproject file to open your project in STM32CubeIDE
 
-5. Build and flash the firmware
+4. Build and flash the firmware
 - Connect the NUCLEO-F767ZI via USB
 - Press Ctrl + B to build
 - Click Debug to start a debug session (recommended) or flash the firmware
 
-6. Monitor serial output
+5. Monitor serial output
 - Open a UART terminal (e.g. [Termite](https://www.npackd.org/p/com.compuphase.Termite/3.4)) at 115200 baud to see debug messages
-- Observe startup logs and network status
-- Press the USER button (blue pushbutton on the board) to initiate the WebSocket connection
+- Useful to see startup logs and network status after setting up the network and server (see next two sections)
 
 
 ## Network Setup
@@ -93,19 +90,23 @@ Run the server:
 python server.py
 ```
 
-### Expected output on the PC (Python terminal):
+### Expected outputs 
+Press the USER button (blue pushbutton on the board) to initiate the WebSocket connection.
+
+
+Python terminal:
 ```bash
 Server running on ws://192.168.0.10:8080
 Connected!!!!
 TEST:  Hello World!
 ```
 
-Pushing the USER button should now display
+Pushing the USER button again should now display
 ```bash
 TEST:  User button pressed!
 ```
 
-### Expected output on the STM32 UART terminal (115200 baud):
+STM32 UART terminal (115200 baud):
 ```bash
 WebSocket: Resolving server name...
 
