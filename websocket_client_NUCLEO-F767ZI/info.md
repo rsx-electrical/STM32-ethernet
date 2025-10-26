@@ -73,7 +73,7 @@ Both devices must be on the same subnet.
 <br>
 
 ## Example WebSocket Server (Python)
-First, connect to the board with the ethernet cable. You can verify the Ethernet connection by opening PowerShell and running:
+First, connect to the board with an Ethernet cable. You can verify the Ethernet connection by opening PowerShell and running:
 ```bash
 ping 192.168.0.20
 ```
