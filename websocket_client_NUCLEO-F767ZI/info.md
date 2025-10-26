@@ -29,8 +29,10 @@ Once running, the STM32 connects to a WebSocket server and can both send and rec
 ## Project Setup
 1. **Download and install STM32CubeIDE**  
 https://www.st.com/en/development-tools/stm32cubeide.html
+
 <br>
-2. **Clone this repository**
+
+3. **Clone this repository**
   ```bash
   git clone https://github.com/<your-username>/<your-repo-name>.git
   ```
