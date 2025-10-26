@@ -1,6 +1,7 @@
 # WebSocket Client for NUCLEO-F767ZI
 This project implements a WebSocket client on the TM32 NUCLEO-F767ZIboard using the CycloneTCP library.
 
+<br>
 
 ## Overview
 Websocket is TCP-based, bidirectional communication protocol over Ethernet between the STM32 and a PC host.  
@@ -9,6 +10,8 @@ The implementation is based on example code from **Oryx Embedded**:
 https://www.oryx-embedded.com/products/CycloneTCP
 
 Once running, the STM32 connects to a WebSocket server and can both send and receive messages in real time.
+
+<br>
 
 ## Features
 - **Target MCU:** STM32F767ZI (NUCLEO-F767ZI board)  
@@ -21,6 +24,7 @@ Once running, the STM32 connects to a WebSocket server and can both send and rec
   - Sends “Hello World!” to the server.  
   - Receives and prints messages from the server.  
 
+<br>
 
 ## Project Setup
 1. **Download and install STM32CubeIDE**  
@@ -97,11 +101,11 @@ Run the server:
 python server.py
 ```
 
-### Expected outputs 
+### Expected outputs:
 Press the USER button (blue pushbutton on the board) to initiate the WebSocket connection.
 
 
-**Python terminal:**
+**Python terminal**
 ```bash
 Server running on ws://192.168.0.10:8080
 Connected!!!!
@@ -113,7 +117,7 @@ Pushing the USER button again should now display
 TEST:  User button pressed!
 ```
 
-**STM32 UART terminal (115200 baud):**
+**STM32 UART terminal (115200 baud)**
 ```bash
 WebSocket: Resolving server name...
 
@@ -127,6 +131,7 @@ WebSocket: Message received (17 bytes)...
   ACK: Hello World!
 ```
 
+<br>
 
 ## Next Steps
 Unfortunately, no .ioc file was included with the original demo. This means the STM32CubeMX GUI cannot be used to edit or reconfigure the project (e.g., pins, clocks, middleware) unless a new CubeMX project is created and manually configured. All hardware or middleware changes must therefore be made directly in the source code.
