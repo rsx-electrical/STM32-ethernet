@@ -10,7 +10,6 @@ https://www.oryx-embedded.com/products/CycloneTCP
 
 Once running, the STM32 connects to a WebSocket server and can both send and receive messages in real time.
 
-
 ## Features
 - **Target MCU:** STM32F767ZI (NUCLEO-F767ZI board)  
 - **Network Stack:** CycloneTCP v2.5.4  
@@ -26,41 +25,46 @@ Once running, the STM32 connects to a WebSocket server and can both send and rec
 ## Project Setup
 1. **Download and install STM32CubeIDE**  
 https://www.st.com/en/development-tools/stm32cubeide.html
-
-
+<br>
 2. **Clone this repository**
   ```bash
   git clone https://github.com/<your-username>/<your-repo-name>.git
   ```
 
+<br>
+
 3. **Open the project in STM32CubeIDE**
 - Open your file explorer and navigate to: rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide
 - Click on the .cproject file to open your project in STM32CubeIDE
 
+<br>
 
 4. **Build and flash the firmware**
 - Connect the NUCLEO-F767ZI via USB
 - Press Ctrl + B to build
 - Click Debug to start a debug session (recommended) or flash the firmware
 
+<br>
 
 5. **Monitor serial output**
 - Open a UART terminal (e.g. [Termite](https://www.npackd.org/p/com.compuphase.Termite/3.4)) at 115200 baud to see debug messages
 - Useful to see startup logs and network status after setting up the network and server (see next two sections)
 
+<br>
 
 ## Network Setup
 To connect directly, static IPs must be assigned manually. On Windows 11, open Settings>Network & Internet>Ethernet, click to Edit IPv4 settings and change the following:
 
-IPv4          -> On
-IP Address    -> 192.168.0.10
-Subnet Mask   -> 255.255.255.0
-Preferred DNS -> 8.8.8.8
-Alternate DNS -> 8.8.8.4
+IPv4          -> On <br>
+IP Address    -> 192.168.0.10 <br>
+Subnet Mask   -> 255.255.255.0 <br>
+Preferred DNS -> 8.8.8.8 <br>
+Alternate DNS -> 8.8.8.4 <br>
 
 Note that these values can be configured in main.c in stm32_project/src.
 Both devices must be on the same subnet.  
 
+<br>
 
 ## Example WebSocket Server (Python)
 First, connect to the board with the ethernet cable. You can verify the Ethernet connection by opening PowerShell and running:
