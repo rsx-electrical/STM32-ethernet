@@ -27,21 +27,24 @@ Once running, the STM32 connects to a WebSocket server and can both send and rec
 1. **Download and install STM32CubeIDE**  
 https://www.st.com/en/development-tools/stm32cubeide.html
 
+
 2. **Clone this repository**
   ```bash
   git clone https://github.com/<your-username>/<your-repo-name>.git
   ```
 
-3. Open the project in STM32CubeIDE
+3. **Open the project in STM32CubeIDE**
 - Open your file explorer and navigate to: rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide
 - Click on the .cproject file to open your project in STM32CubeIDE
 
-4. Build and flash the firmware
+
+4. **Build and flash the firmware**
 - Connect the NUCLEO-F767ZI via USB
 - Press Ctrl + B to build
 - Click Debug to start a debug session (recommended) or flash the firmware
 
-5. Monitor serial output
+
+5. **Monitor serial output**
 - Open a UART terminal (e.g. [Termite](https://www.npackd.org/p/com.compuphase.Termite/3.4)) at 115200 baud to see debug messages
 - Useful to see startup logs and network status after setting up the network and server (see next two sections)
 
@@ -94,7 +97,7 @@ python server.py
 Press the USER button (blue pushbutton on the board) to initiate the WebSocket connection.
 
 
-Python terminal:
+**Python terminal:**
 ```bash
 Server running on ws://192.168.0.10:8080
 Connected!!!!
@@ -106,7 +109,7 @@ Pushing the USER button again should now display
 TEST:  User button pressed!
 ```
 
-STM32 UART terminal (115200 baud):
+**STM32 UART terminal (115200 baud):**
 ```bash
 WebSocket: Resolving server name...
 
@@ -119,6 +122,7 @@ WebSocket: Message received (7 bytes)...
 WebSocket: Message received (17 bytes)...
   ACK: Hello World!
 ```
+
 
 ## Next Steps
 Unfortunately, no .ioc file was included with the original demo. This means the STM32CubeMX GUI cannot be used to edit or reconfigure the project (e.g., pins, clocks, middleware) unless a new CubeMX project is created and manually configured. All hardware or middleware changes must therefore be made directly in the source code.
