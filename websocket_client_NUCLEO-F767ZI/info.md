@@ -32,16 +32,22 @@ https://www.st.com/en/development-tools/stm32cubeide.html
 
 <br>
 
-3. **Clone this repository**
+3. **Clone this repository - may need to use git bash**
   ```bash
-  git clone https://github.com/<your-username>/<your-repo-name>.git
+  git clone https://github.com/rsx-electrical/STM32-ethernet.git
   ```
 
 <br>
+Alternatively, use Github Desktop to clone  
 
 3. **Open the project in STM32CubeIDE**
 - Open your file explorer and navigate to: rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide
 - Click on the .cproject file to open your project in STM32CubeIDE
+- Should look like this in your IDE's Project Explorer:
+
+<div align="center">
+<img src="img/ProjectInIDE.png" width="800">
+</div>
 
 <br>
 
