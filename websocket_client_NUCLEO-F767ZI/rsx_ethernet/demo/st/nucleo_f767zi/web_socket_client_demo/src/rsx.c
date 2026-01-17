@@ -22,6 +22,14 @@ void motor_off(void) {
   HAL_GPIO_WritePin(MOTOR_EN_PORT, MOTOR_EN_PIN, GPIO_PIN_RESET);
 }
 
+void bus_5v_on(void) {
+  HAL_GPIO_WritePin(BUS_5V_PORT, BUS_5V_PIN, GPIO_PIN_SET);
+}
+
+void bus_5v_off(void) {
+  HAL_GPIO_WritePin(BUS_5V_PORT, BUS_5V_PIN, GPIO_PIN_RESET);
+}
+
 void bus_12v_on(void) {
   HAL_GPIO_WritePin(BUS_12V_PORT, BUS_12V_PIN, GPIO_PIN_SET);
 }
@@ -33,28 +41,23 @@ void bus_12v_off(void) {
 void bus_19v_on(void) {
   HAL_GPIO_WritePin(BUS_19V_PORT, BUS_19V_PIN, GPIO_PIN_SET);
 }
-void bus_19_off(void) {
+
+void bus_19v_off(void) {
   HAL_GPIO_WritePin(BUS_19V_PORT, BUS_19V_PIN, GPIO_PIN_RESET);
 }
 
-void bus_5_on(void) {
-  HAL_GPIO_WritePin(BUS_5V_PORT, BUS_5V_PIN, GPIO_PIN_SET);
+void bus_24v_on(void) {
+  HAL_GPIO_WritePin(BUS_24V_PORT, BUS_24V_PIN, GPIO_PIN_SET);
 }
-void bus_5_off(void) {
-  HAL_GPIO_WritePin(BUS_5V_PORT, BUS_5V_PIN, GPIO_PIN_RESET);
 
-  void bus_24v_on(void) {
-    HAL_GPIO_WritePin(BUS_24V_PORT, BUS_24V_PIN, GPIO_PIN_SET);
-  }
+void bus_24v_off(void) {
+  HAL_GPIO_WritePin(BUS_24V_PORT, BUS_24V_PIN, GPIO_PIN_RESET);
+}
 
-  void bus_24v_off(void) {
-    HAL_GPIO_WritePin(BUS_24V_PORT, BUS_24V_PIN, GPIO_PIN_RESET);
-  }
+void bus_55v_on(void) {
+  HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_SET);
+}
 
-  void bus_55v_on(void) {
-    HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_SET);
-  }
-
-  void bus_55v_off(void) {
-    HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
-  }
+void bus_55v_off(void) {
+  HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
+}
