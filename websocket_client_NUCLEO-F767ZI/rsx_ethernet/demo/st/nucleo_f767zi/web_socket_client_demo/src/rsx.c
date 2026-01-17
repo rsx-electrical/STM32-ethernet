@@ -61,3 +61,12 @@ void bus_55v_on(void) {
 void bus_55v_off(void) {
   HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
 }
+
+// Ruth
+void measure_v(void) {}
+
+// Andrew
+void measure_batt(void) {}
+
+// Tanmay
+void measure_a(void) {}
