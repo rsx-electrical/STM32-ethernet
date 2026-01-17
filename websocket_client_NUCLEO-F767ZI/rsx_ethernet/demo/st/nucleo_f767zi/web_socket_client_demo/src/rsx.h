@@ -12,6 +12,8 @@
 #define BUS_55V_PIN    GPIO_PIN_2
 #define BUS_12V_PORT   GPIOD
 #define BUS_12V_PIN    GPIO_PIN_13
+#define BUS_19V_PORT   GPIOF
+#define BUS_19V_PIN    GPIO_PIN_14
 #define ESTOP_PORT     GPIOG
 #define ESTOP_PIN      GPIO_PIN_1
 
