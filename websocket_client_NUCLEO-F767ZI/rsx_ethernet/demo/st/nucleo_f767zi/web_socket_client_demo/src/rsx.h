@@ -31,9 +31,15 @@ void measure_batt(void);  // Combines BMS and ADC readings
 void measure_a(void);
 void arm_on(void);
 void arm_off(void);
-void bus_55_on(void);
-void bus_55_off(void);
-void bus_12_on(void);
-void bus_12_on(void);
+void bus_5v_on(void);
+void bus_5v_off(void);
+void bus_12v_on(void);
+void bus_12v_off(void);
+void bus_19v_on(void);
+void bus_19v_off(void);
+void bus_24v_on(void);
+void bus_24v_off(void);
+void bus_55v_on(void);
+void bus_55v_off(void);
 
 #endif
