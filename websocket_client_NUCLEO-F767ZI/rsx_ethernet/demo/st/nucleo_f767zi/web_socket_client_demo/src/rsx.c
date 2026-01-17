@@ -1,6 +1,4 @@
-#include <stdlib.h>
-#include "stm32f7xx.h"
-#include "stm32f7xx_hal.h"
+#include "rsx.h"
 
 int main(void) {
     HAL_Init();            // Resets all peripherals and initializes Flash interface
@@ -10,6 +8,6 @@ int main(void) {
     MX_SPI1_Init();        // Powers up the BMS communication
 
     while (1) {
-        
+
     }
 }
