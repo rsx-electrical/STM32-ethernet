@@ -3,7 +3,9 @@
 #include "stm32f7xx_hal.h"
 #include "rsx.h"
 
-void Estop_toggle(void) {}
+void Estop_toggle(void) {
+    
+}
 
 void motor_on(void) {
     HAL_GPIO_WritePin(MOTOR_EN_PORT, MOTOR_EN_PIN, GPIO_PIN_SET);
