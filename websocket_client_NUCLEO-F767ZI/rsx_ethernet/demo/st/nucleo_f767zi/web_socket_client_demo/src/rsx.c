@@ -35,3 +35,10 @@ void bus_19_on(void) {
 void bus_19_off(void) {
     HAL_GPIO_WritePin(BUS_19V_PORT, BUS_19V_PIN, GPIO_PIN_RESET);
 }
+
+void bus_5_on(void) {
+    HAL_GPIO_WritePin(BUS_5V_PORT, BUS_5V_PIN, GPIO_PIN_SET);
+}
+void bus_5_off(void) {
+    HAL_GPIO_WritePin(BUS_5V_PORT, BUS_5V_PIN, GPIO_PIN_RESET);
+}
