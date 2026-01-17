@@ -9,6 +9,8 @@
 // Define the pins based on the diagram provided
 #define MOTOR_EN_PORT GPIOD
 #define MOTOR_EN_PIN GPIO_PIN_11
+#define ARM_EN_PORT GPIOE
+#define ARM_EN_PIN GPIO_PIN_6
 #define BUS_5V_PORT GPIOF
 #define BUS_5V_PIN GPIO_PIN_15
 #define BUS_12V_PORT GPIOD
