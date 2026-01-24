@@ -103,6 +103,7 @@ void shutoff_sequence(void) {
   HAL_Delay(100);
   measure_v();  // measure after to see if it shows value (depends if 5V powers
                 // sensors)
+  measure_a();
   measure_batt();
 }
 
