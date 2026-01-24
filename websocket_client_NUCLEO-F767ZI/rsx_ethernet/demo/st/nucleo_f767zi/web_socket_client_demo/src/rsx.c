@@ -70,3 +70,94 @@ void measure_batt(void) {}
 
 // Tanmay
 void measure_a(void) {}
+
+// Turn off buses, arm, and motor
+void shutoff_sequence(void) {
+  // Turn off motor and arm
+  motor_off();
+  HAL_Delay(100);
+  measure_a();
+  measure_batt();
+  arm_off();
+  HAL_Delay(100);
+  measure_a();
+  measure_batt();
+
+  // Turn off buses
+  bus_55v_off();
+  HAL_Delay(100);
+  measure_v();
+  bus_24v_off();
+  HAL_Delay(100);
+  measure_v();
+  bus_19v_off();  // can remove if 19V not used, though it won't make a
+                  // difference
+  HAL_Delay(100);
+  measure_v();
+  bus_12v_off();
+  HAL_Delay(100);
+  measure_v();
+  measure_a();
+  measure_batt();  // if 5V bus powers sensor measure first
+  bus_5v_off();
+  HAL_Delay(100);
+  measure_v();  // measure after to see if it shows value (depends if 5V powers
+                // sensors)
+  measure_batt();
+}
+
+void power_sequence(void) {
+  // 5V bus test
+  bus_5v_on();
+  HAL_Delay(100);
+  measure_v();
+  bus_12v_on();
+  HAL_Delay(100);
+  measure_v();
+  // Skip 19V?
+  bus_24v_on();
+  HAL_Delay(100);
+  measure_v();
+  bus_55v_on();
+  HAL_Delay(100);
+  measure_v();
+
+  // Turn on arm
+  arm_on();
+  HAL_Delay(100);
+  measure_a();
+  measure_batt();
+
+  // Turn on motor
+  motor_on();
+  HAL_Delay(100);
+  measure_a();
+  measure_batt();
+}
+
+void rsx_test(void) {
+  // Ensure buses, arm, and motor are off
+  shutoff_sequence();
+
+  // Turn on all
+  power_sequence();
+
+  // Turn off all
+  shutoff_sequence();
+}
+
+void Estop_test(void) {
+  // Ensure buses, arm, and motor are off
+  shutoff_sequence();
+
+  // Turn on all
+  power_sequence();
+
+  Estop_toggle();
+  HAL_Delay(500);
+  measure_v();
+  measure_a();
+  measure_batt();
+  // Turn off all pins in case
+  shutoff_sequence();
+}

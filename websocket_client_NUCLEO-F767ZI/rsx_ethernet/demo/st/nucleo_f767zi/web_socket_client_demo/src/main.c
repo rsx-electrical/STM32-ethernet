@@ -466,14 +466,16 @@ void ledTask(void *param) {
  **/
 
 void rsxTask(void *param) {
-  // Endless loop
-  while (1) {
-  }
+  rsx_test();
+  osDelayTask(1000);
+  Estop_test();
+  osDeleteTask(NULL);
 }
 
 /**
  * @brief Main entry point
  * @return Unused value
+ * @todo Call rsxTask in main()
  **/
 
 int_t main(void) {
