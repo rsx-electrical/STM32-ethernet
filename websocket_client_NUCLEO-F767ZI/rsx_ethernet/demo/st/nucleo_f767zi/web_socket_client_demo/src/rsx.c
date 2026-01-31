@@ -1,4 +1,5 @@
 #include "rsx.h"
+#include "debug.h"
 
 #include <stdlib.h>
 
@@ -142,6 +143,8 @@ void rsx_test(void) {
 
   // Turn on all
   power_sequence();
+
+  HAL_Delay(30000);
 
   // Turn off all
   shutoff_sequence();
