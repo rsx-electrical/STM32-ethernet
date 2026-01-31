@@ -735,6 +735,12 @@ int_t main(void) {
   // Start the execution of tasks
   osStartKernel();
 
+  taskId = osCreateTask("rsx", rsxTask, NULL, &taskParams);
+  if (taskId == OS_INVALID_TASK_ID) {
+    // Debug message
+    TRACE_ERROR("Failed to create task!\r\n");
+  }
+
   // This function should never return
   return 0;
 }

@@ -73,5 +73,7 @@ void bus_24v_on(void);
 void bus_24v_off(void);
 void bus_55v_on(void);
 void bus_55v_off(void);
+void Estop_test(void);
+void rsx_test(void);
 
 #endif
