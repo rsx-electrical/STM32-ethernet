@@ -110,22 +110,22 @@ void shutoff_sequence(void) {
 
 void power_sequence(void) {
   // 5V bus test
-  bus_5v_on();
+  bus_5v_on(); // works
   HAL_Delay(100);
   measure_v();
-  bus_12v_on();
+  bus_12v_on(); // works
   HAL_Delay(100);
   measure_v();
   // Skip 19V?
-  bus_24v_on();
+  bus_24v_on(); // works
   HAL_Delay(100);
   measure_v();
-  bus_55v_on();
+  bus_55v_on(); //works
   HAL_Delay(100);
   measure_v();
 
   // Turn on arm
-  arm_on();
+  arm_on(); // doesn't work
   HAL_Delay(100);
   measure_a();
   measure_batt();
@@ -143,8 +143,16 @@ void rsx_test(void) {
 
   // Turn on all
   power_sequence();
+  shutoff_sequence();
+  power_sequence();
+  shutoff_sequence();
+  power_sequence();
+  shutoff_sequence();
+  power_sequence();
+  shutoff_sequence();
 
-  HAL_Delay(30000);
+  HAL_Delay(10000);
+  osDelayTask(10000);
 
   // Turn off all
   shutoff_sequence();
