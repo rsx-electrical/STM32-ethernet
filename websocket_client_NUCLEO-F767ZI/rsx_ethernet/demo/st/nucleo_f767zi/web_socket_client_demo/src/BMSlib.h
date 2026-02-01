@@ -14,6 +14,7 @@ extern const uint8_t CLRCELL[4];
 #define NUMCELLS 4
 
 void measure_batt_v(uint16_t* mv, int print);
+void RSX_SPI_Init(void);
 void wakeup(); //wake up spi interface (not working)
 void adcvsc(); //measure all cells and sum of all cells
 void adcv();  //measure all cells
