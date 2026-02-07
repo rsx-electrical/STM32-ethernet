@@ -1,7 +1,8 @@
 #include "rsx.h"
 #include "debug.h"
-
 #include <stdlib.h>
+
+extern ADC_HandleTypeDef hadc1;
 
 void Estop_toggle(void) {
   HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_SET);
@@ -67,7 +68,34 @@ void bus_55v_off(void) {
 void measure_v(void) {}
 
 // Andrew
-void measure_batt(void) {}
+void measure_batt(void) {
+  // ADC Measure
+  ADC_ChannelConfTypeDef sConfig = {0};
+  int batt_val = 0;
+
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+  
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+      TRACE_ERROR("ADC Config Error\r\n");
+      return;
+  }
+
+  HAL_ADC_Start(&hadc1);
+
+  if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+      batt_val = HAL_ADC_GetValue(&hadc1);
+  }
+
+  HAL_ADC_Stop(&hadc1);
+  
+  // BMS Measure (todo)
+
+
+
+  return batt_val;
+}
 
 // Tanmay
 void measure_a(void) {}

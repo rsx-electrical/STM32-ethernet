@@ -84,6 +84,7 @@ SlaacSettings slaacSettings;
 SlaacContext slaacContext;
 HmacDrbgContext hmacDrbgContext;
 uint8_t seed[48];
+ADC_HandleTypeDef hadc1;
 
 /**
  * @brief System clock configuration
@@ -171,6 +172,23 @@ void RSX_GPIO_Init(void) {
     
     GPIO_InitStruct.Pin = MEASURE_BATT_A_PIN;
     HAL_GPIO_Init(MEASURE_BATT_A_PORT, &GPIO_InitStruct);
+
+    // adc initialization
+    hadc1.Instance = ADC1;
+    hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
+    hadc1.Init.ScanConvMode          = DISABLE; 
+    hadc1.Init.ContinuousConvMode    = DISABLE;
+    hadc1.Init.DiscontinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    hadc1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+    hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+    hadc1.Init.NbrOfConversion       = 1;
+    
+    /* 3. Apply the config */
+    if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+        TRACE_ERROR("ADC Init Error\r\n");
+    }
 
     /* 4. Set initial safe state (All OFF) */
     shutoff_sequence();
@@ -574,6 +592,7 @@ void rsxButtonTask(void *param){
     if (buttonEventFlag) {
       // Clear flag
       buttonEventFlag = FALSE;
+        // Check user button state
       switch(button_value) {
           case STATE_IDLE:
               bus_5v_on();
@@ -641,7 +660,6 @@ void rsxButtonTask(void *param){
       }
     }
   }
-  // Check user button state
 
   
 
