@@ -72,33 +72,33 @@ void measure_v(void) {}
 // Andrew
 void measure_batt(void) {
   // ADC Measure
-  ADC_ChannelConfTypeDef sConfig = {0};
-  int raw_val = 0;
+  // ADC_ChannelConfTypeDef sConfig = {0};
+  // int raw_val = 0;
 
-  sConfig.Channel = ADC_CHANNEL_10;
-  sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+  // sConfig.Channel = ADC_CHANNEL_10;
+  // sConfig.Rank = 1;
+  // sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
 
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-    TRACE_ERROR("ADC Config Error\r\n");
-    return;
-  }
+  // if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+  //   TRACE_ERROR("ADC Config Error\r\n");
+  //   return;
+  // }
 
-  HAL_ADC_Start(&hadc1);
+  // HAL_ADC_Start(&hadc1);
 
-  if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-    raw_val = HAL_ADC_GetValue(&hadc1);
-  }
+  // if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+  //   raw_val = HAL_ADC_GetValue(&hadc1);
+  // }
 
-  HAL_ADC_Stop(&hadc1);
+  // HAL_ADC_Stop(&hadc1);
 
-  float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
-  float batt_voltage =
-      pin_voltage * 16.67f;  // DON'T KNOW FACTOR VOLTAGE IS DIVIDED BY
+  // float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
+  // float batt_voltage =
+  //     pin_voltage * 16.67f;  // DON'T KNOW FACTOR VOLTAGE IS DIVIDED BY
 
-  // BMS Measure (todo)
+  // // BMS Measure (todo)
 
-  return batt_voltage;
+  // return batt_voltage;
 }
 
 // Tanmay
