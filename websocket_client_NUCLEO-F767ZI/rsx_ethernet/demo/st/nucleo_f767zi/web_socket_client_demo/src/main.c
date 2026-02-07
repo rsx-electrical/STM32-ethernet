@@ -84,96 +84,115 @@ SlaacSettings slaacSettings;
 SlaacContext slaacContext;
 HmacDrbgContext hmacDrbgContext;
 uint8_t seed[48];
+ADC_HandleTypeDef hadc1;
 
 /**
  * @brief System clock configuration
  **/
 
- /**
+/**
  * @brief Initializes all GPIO pins for the RSX system.
  * This must be called in main() BEFORE starting the RTOS kernel.
  */
 void RSX_GPIO_Init(void) {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    /* 1. Enable Peripheral Clocks for all used Ports */
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    __HAL_RCC_GPIOE_CLK_ENABLE();
-    __HAL_RCC_GPIOF_CLK_ENABLE();
-    __HAL_RCC_GPIOG_CLK_ENABLE();
+  /* 1. Enable Peripheral Clocks for all used Ports */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
 
-    /* 2. Configure Digital Output Pins (Control) 
-       Set to Push-Pull, No Pull, Low Speed for safety */
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  /* 2. Configure Digital Output Pins (Control)
+     Set to Push-Pull, No Pull, Low Speed for safety */
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 
-    // Motor and Arm Enable
-    GPIO_InitStruct.Pin = MOTOR_EN_PIN;
-    HAL_GPIO_Init(MOTOR_EN_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = ARM_EN_PIN;
-    HAL_GPIO_Init(ARM_EN_PORT, &GPIO_InitStruct);
+  // Motor and Arm Enable
+  GPIO_InitStruct.Pin = MOTOR_EN_PIN;
+  HAL_GPIO_Init(MOTOR_EN_PORT, &GPIO_InitStruct);
 
-    // Power Buses
-    GPIO_InitStruct.Pin = BUS_5V_PIN;
-    HAL_GPIO_Init(BUS_5V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = BUS_12V_PIN;
-    HAL_GPIO_Init(BUS_12V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = BUS_19V_PIN;
-    HAL_GPIO_Init(BUS_19V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = BUS_24V_PIN;
-    HAL_GPIO_Init(BUS_24V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = BUS_55V_PIN;
-    HAL_GPIO_Init(BUS_55V_PORT, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = ARM_EN_PIN;
+  HAL_GPIO_Init(ARM_EN_PORT, &GPIO_InitStruct);
 
-    // E-Stop Control
-    GPIO_InitStruct.Pin = ESTOP_PIN;
-    HAL_GPIO_Init(ESTOP_PORT, &GPIO_InitStruct);
+  // Power Buses
+  GPIO_InitStruct.Pin = BUS_5V_PIN;
+  HAL_GPIO_Init(BUS_5V_PORT, &GPIO_InitStruct);
 
-    /* 3. Configure Analog Input Pins (Measurement)
-       Set to Analog mode to disable digital input buffers for better ADC accuracy */
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pin = BUS_12V_PIN;
+  HAL_GPIO_Init(BUS_12V_PORT, &GPIO_InitStruct);
 
-    // Voltage Measurements
-    GPIO_InitStruct.Pin = MEASURE_5V_PIN;
-    HAL_GPIO_Init(MEASURE_5V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_12V_PIN;
-    HAL_GPIO_Init(MEASURE_12V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_19V_PIN;
-    HAL_GPIO_Init(MEASURE_19V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_24V_PIN;
-    HAL_GPIO_Init(MEASURE_24V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_55V_PIN;
-    HAL_GPIO_Init(MEASURE_55V_PORT, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = BUS_19V_PIN;
+  HAL_GPIO_Init(BUS_19V_PORT, &GPIO_InitStruct);
 
-    // Battery and Current Measurements
-    GPIO_InitStruct.Pin = MEASURE_BATT_V_PIN;
-    HAL_GPIO_Init(MEASURE_BATT_V_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_MOTOR_A_PIN;
-    HAL_GPIO_Init(MEASURE_MOTOR_A_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_CHARGER_A_PIN;
-    HAL_GPIO_Init(MEASURE_CHARGER_A_PORT, &GPIO_InitStruct);
-    
-    GPIO_InitStruct.Pin = MEASURE_BATT_A_PIN;
-    HAL_GPIO_Init(MEASURE_BATT_A_PORT, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = BUS_24V_PIN;
+  HAL_GPIO_Init(BUS_24V_PORT, &GPIO_InitStruct);
 
-    /* 4. Set initial safe state (All OFF) */
-    shutoff_sequence();
+  GPIO_InitStruct.Pin = BUS_55V_PIN;
+  HAL_GPIO_Init(BUS_55V_PORT, &GPIO_InitStruct);
+
+  // E-Stop Control
+  GPIO_InitStruct.Pin = ESTOP_PIN;
+  HAL_GPIO_Init(ESTOP_PORT, &GPIO_InitStruct);
+
+  /* 3. Configure Analog Input Pins (Measurement)
+     Set to Analog mode to disable digital input buffers for better ADC accuracy
+   */
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+
+  // Voltage Measurements
+  GPIO_InitStruct.Pin = MEASURE_5V_PIN;
+  HAL_GPIO_Init(MEASURE_5V_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_12V_PIN;
+  HAL_GPIO_Init(MEASURE_12V_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_19V_PIN;
+  HAL_GPIO_Init(MEASURE_19V_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_24V_PIN;
+  HAL_GPIO_Init(MEASURE_24V_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_55V_PIN;
+  HAL_GPIO_Init(MEASURE_55V_PORT, &GPIO_InitStruct);
+
+  // Battery and Current Measurements
+  GPIO_InitStruct.Pin = MEASURE_BATT_V_PIN;
+  HAL_GPIO_Init(MEASURE_BATT_V_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_MOTOR_A_PIN;
+  HAL_GPIO_Init(MEASURE_MOTOR_A_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_CHARGER_A_PIN;
+  HAL_GPIO_Init(MEASURE_CHARGER_A_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = MEASURE_BATT_A_PIN;
+  HAL_GPIO_Init(MEASURE_BATT_A_PORT, &GPIO_InitStruct);
+
+  // adc initialization
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+
+  /* 3. Apply the config */
+  if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+    TRACE_ERROR("ADC Init Error\r\n");
+  }
+
+  /* 4. Set initial safe state (All OFF) */
+  shutoff_sequence();
 }
 
 void SystemClock_Config(void) {
@@ -454,7 +473,8 @@ error_t webSocketClientTest(void) {
 
       //   // Send a message to the WebSocket server
       //   error =
-      //       webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT, NULL);
+      //       webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+      //       NULL);
       //   // Any error to report?
       //   if (error) break;
 
@@ -559,92 +579,89 @@ void rsxTask(void *param) {
   osDeleteTask(NULL);
 }
 
-#define STATE_IDLE   0
-#define ENABLE_5     1
-#define ENABLE_12    2
-#define ENABLE_19    3
-#define ENABLE_24    4
-#define ENABLE_55    5
-#define ENABLE_ARM   6
+#define STATE_IDLE 0
+#define ENABLE_5 1
+#define ENABLE_12 2
+#define ENABLE_19 3
+#define ENABLE_24 4
+#define ENABLE_55 5
+#define ENABLE_ARM 6
 #define ENABLE_MOTOR 7
 
-void rsxButtonTask(void *param){
+void rsxButtonTask(void *param) {
   int button_value = 0;
-  while (1){
+  while (1) {
     if (buttonEventFlag) {
       // Clear flag
       buttonEventFlag = FALSE;
-      switch(button_value) {
-          case STATE_IDLE:
-              bus_5v_on();
-              BSP_LED_On(LED1);
-              TRACE_INFO("RSX: 5V Enabled\r\n");
-              button_value = ENABLE_5;
-              break;
+      // Check user button state
+      switch (button_value) {
+        case STATE_IDLE:
+          bus_5v_on();
+          BSP_LED_On(LED1);
+          TRACE_INFO("RSX: 5V Enabled\r\n");
+          button_value = ENABLE_5;
+          break;
 
-          case ENABLE_5:
-              bus_12v_on();
-              BSP_LED_Off(LED1);
+        case ENABLE_5:
+          bus_12v_on();
+          BSP_LED_Off(LED1);
 
-              TRACE_INFO("RSX: 12V Enabled\r\n");
-              button_value = ENABLE_12;
-              break;
+          TRACE_INFO("RSX: 12V Enabled\r\n");
+          button_value = ENABLE_12;
+          break;
 
-          case ENABLE_12:
-              bus_19v_on();
-              BSP_LED_On(LED1);
-              TRACE_INFO("RSX: 19V Enabled\r\n");
-              button_value = ENABLE_19;
-              break;
+        case ENABLE_12:
+          bus_19v_on();
+          BSP_LED_On(LED1);
+          TRACE_INFO("RSX: 19V Enabled\r\n");
+          button_value = ENABLE_19;
+          break;
 
-          case ENABLE_19:
-              bus_24v_on();
-              BSP_LED_Off(LED1);
+        case ENABLE_19:
+          bus_24v_on();
+          BSP_LED_Off(LED1);
 
-              TRACE_INFO("RSX: 24V Enabled\r\n");
-              button_value = ENABLE_24;
-              break;
+          TRACE_INFO("RSX: 24V Enabled\r\n");
+          button_value = ENABLE_24;
+          break;
 
-          case ENABLE_24:
-              bus_55v_on();
-              BSP_LED_On(LED1);
+        case ENABLE_24:
+          bus_55v_on();
+          BSP_LED_On(LED1);
 
-              TRACE_INFO("RSX: 55V Enabled\r\n");
-              button_value = ENABLE_55;
-              break;
+          TRACE_INFO("RSX: 55V Enabled\r\n");
+          button_value = ENABLE_55;
+          break;
 
-          case ENABLE_55:
-              arm_on();
-              BSP_LED_Off(LED1);
-              TRACE_INFO("RSX: Arm Enabled\r\n");
-              button_value = ENABLE_ARM;
-              break;
+        case ENABLE_55:
+          arm_on();
+          BSP_LED_Off(LED1);
+          TRACE_INFO("RSX: Arm Enabled\r\n");
+          button_value = ENABLE_ARM;
+          break;
 
-          case ENABLE_ARM:
-              motor_on();
-              BSP_LED_On(LED1);
-              TRACE_INFO("RSX: Motor Enabled\r\n");
-              button_value = ENABLE_MOTOR;
-              break;
+        case ENABLE_ARM:
+          motor_on();
+          BSP_LED_On(LED1);
+          TRACE_INFO("RSX: Motor Enabled\r\n");
+          button_value = ENABLE_MOTOR;
+          break;
 
-          case ENABLE_MOTOR:
-              shutoff_sequence();
-              BSP_LED_Off(LED1);
-              TRACE_INFO("RSX: All Systems Off\r\n");
-              button_value = STATE_IDLE;
-              break;
+        case ENABLE_MOTOR:
+          shutoff_sequence();
+          BSP_LED_Off(LED1);
+          TRACE_INFO("RSX: All Systems Off\r\n");
+          button_value = STATE_IDLE;
+          break;
 
-          default: 
-              shutoff_sequence();
-              button_value = STATE_IDLE;
-              break;
+        default:
+          shutoff_sequence();
+          button_value = STATE_IDLE;
+          break;
       }
     }
   }
-  // Check user button state
-
-  
-
 }
 
 /**
@@ -875,7 +892,7 @@ int_t main(void) {
   taskParams.priority = OS_TASK_PRIORITY_NORMAL;
 
   // Create user task
-//  taskId = osCreateTask("User", userTask, NULL, &taskParams);
+  //  taskId = osCreateTask("User", userTask, NULL, &taskParams);
   // Failed to create the task?
   if (taskId == OS_INVALID_TASK_ID) {
     // Debug message
