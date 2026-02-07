@@ -54,6 +54,16 @@ typedef struct {
 #define MEASURE_BATT_A_PORT GPIOF
 #define MEASURE_BATT_A_PIN GPIO_PIN_5
 
+#define ADC_MAX     4095.0f
+#define VREF        3.3f
+
+// Divider Factors
+#define DIV_12V  4.00
+#define DIV_17V  17.0/3
+#define DIV_19V  19.0/3
+#define DIV_24V  8.00
+#define DIV_55V  55.0/3
+
 // Function Prototypes for MCU Functions
 void motor_on(void);
 void motor_off(void);

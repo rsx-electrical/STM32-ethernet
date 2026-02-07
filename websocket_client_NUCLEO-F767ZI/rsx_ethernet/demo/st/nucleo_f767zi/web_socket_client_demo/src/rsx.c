@@ -64,7 +64,50 @@ void bus_55v_off(void) {
 }
 
 // Ruth
-void measure_v(void) {}
+extern ADC_HandleTypeDef hadc1;
+
+static uint16_t adc_read(uint32_t channel)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+
+    sConfig.Channel = channel;
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
+
+    HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    uint16_t value = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Stop(&hadc1);
+
+    return value;
+}
+
+static float adc_to_voltage(uint16_t adc)
+{
+    return (adc * VREF) / ADC_MAX;
+}
+
+void measure_v(void) {
+    uint16_t adc_12v = adc_read(ADC_CHANNEL_12);
+    uint16_t adc_17v = adc_read(ADC_CHANNEL_10);
+    uint16_t adc_19v = adc_read(ADC_CHANNEL_3);
+    uint16_t adc_24v = adc_read(ADC_CHANNEL_14);
+    uint16_t adc_55v = adc_read(ADC_CHANNEL_8);
+
+    float v_12v = adc_to_voltage(adc_12v) * DIV_12V;
+    float v_17v = adc_to_voltage(adc_17v) * DIV_17V;
+    float v_19v = adc_to_voltage(adc_19v) * DIV_19V;
+    float v_24v = adc_to_voltage(adc_24v) * DIV_24V;
+    float v_55v = adc_to_voltage(adc_55v) * DIV_55V;
+
+    debug_printf("12V: %.2f V\r\n", v_12v);
+    debug_printf("12V: %.2f V\r\n", v_17v);
+    debug_printf("12V: %.2f V\r\n", v_19v);
+    debug_printf("24V: %.2f V\r\n", v_24v);
+    debug_printf("55V: %.2f V\r\n", v_55v);
+}
 
 // Andrew
 void measure_batt(void) {}
