@@ -1,6 +1,8 @@
 #include "rsx.h"
-#include "debug.h"
+
 #include <stdlib.h>
+
+#include "debug.h"
 
 extern ADC_HandleTypeDef hadc1;
 
@@ -76,22 +78,23 @@ void measure_batt(void) {
   sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
-  
+
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-      TRACE_ERROR("ADC Config Error\r\n");
-      return;
+    TRACE_ERROR("ADC Config Error\r\n");
+    return;
   }
 
   HAL_ADC_Start(&hadc1);
 
   if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-      raw_val = HAL_ADC_GetValue(&hadc1);
+    raw_val = HAL_ADC_GetValue(&hadc1);
   }
 
   HAL_ADC_Stop(&hadc1);
-  
-  float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;  
-  float batt_voltage = pin_voltage * 16.67f; // placeholder value
+
+  float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
+  float batt_voltage =
+      pin_voltage * 16.67f;  // DON'T KNOW FACTOR VOLTAGE IS DIVIDED BY
 
   // BMS Measure (todo)
 
@@ -139,22 +142,22 @@ void shutoff_sequence(void) {
 
 void power_sequence(void) {
   // 5V bus test
-  bus_5v_on(); // works
+  bus_5v_on();  // works
   HAL_Delay(100);
   measure_v();
-  bus_12v_on(); // works
+  bus_12v_on();  // works
   HAL_Delay(100);
   measure_v();
   // Skip 19V?
-  bus_24v_on(); // works
+  bus_24v_on();  // works
   HAL_Delay(100);
   measure_v();
-  bus_55v_on(); //works
+  bus_55v_on();  // works
   HAL_Delay(100);
   measure_v();
 
   // Turn on arm
-  arm_on(); // doesn't work
+  arm_on();  // doesn't work
   HAL_Delay(100);
   measure_a();
   measure_batt();
