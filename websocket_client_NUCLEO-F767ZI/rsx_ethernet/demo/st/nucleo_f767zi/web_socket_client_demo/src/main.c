@@ -43,6 +43,7 @@
 #include "stm32f7xx_hal.h"
 #include "stm32f7xx_nucleo_144.h"
 #include "web_socket/web_socket.h"
+#include "BMSlib.h"
 
 // Ethernet interface configuration
 #define APP_IF_NAME "eth0"
@@ -699,6 +700,7 @@ int_t main(void) {
   // Configure debug UART
   debugInit(115200);
   RSX_GPIO_Init();
+  RSX_SPI_Init();
 
   // Start-up message
   TRACE_INFO("\r\n");
@@ -892,7 +894,7 @@ int_t main(void) {
   taskParams.priority = OS_TASK_PRIORITY_NORMAL;
 
   // Create user task
-  //  taskId = osCreateTask("User", userTask, NULL, &taskParams);
+  taskId = osCreateTask("User", userTask, NULL, &taskParams);
   // Failed to create the task?
   if (taskId == OS_INVALID_TASK_ID) {
     // Debug message
@@ -933,6 +935,18 @@ int_t main(void) {
 
   taskId = osCreateTask("button", rsxButtonTask, NULL, &taskParams);
   if (taskId == OS_INVALID_TASK_ID) {
+    // Debug message
+    TRACE_ERROR("Failed to create task!\r\n");
+  }
+
+  bmsTaskHandle = osCreateTask("bms", rsxBMSTask, NULL, &taskParams);
+  if (bmsTaskHandle == NULL) {
+    // Debug message
+    TRACE_ERROR("Failed to create task!\r\n");
+  }
+
+  spiSendTaskHandle = osCreateTask("spi_send", rsxSpiSendTask, NULL, &taskParams);
+  if (spiSendTaskHandle == NULL) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
