@@ -1907,9 +1907,19 @@
 			<locationURI>PARENT-5-PROJECT_LOC/cyclone_tcp/web_socket/web_socket_transport.c</locationURI>
 		</link>
 		<link>
+			<name>Demo_Headers/BMSlib.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src/BMSlib.h</locationURI>
+		</link>
+		<link>
 			<name>Demo_Headers/FreeRTOSConfig.h</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/src/FreeRTOSConfig.h</locationURI>
+		</link>
+		<link>
+			<name>Demo_Headers/PEC.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src/PEC.h</locationURI>
 		</link>
 		<link>
 			<name>Demo_Headers/crypto_config.h</name>
@@ -1945,6 +1955,16 @@
 			<name>Demo_Headers/tls_config.h</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/src/tls_config.h</locationURI>
+		</link>
+		<link>
+			<name>Demo_Sources/BMSlib.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src/BMSlib.c</locationURI>
+		</link>
+		<link>
+			<name>Demo_Sources/PEC.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src/PEC.c</locationURI>
 		</link>
 		<link>
 			<name>Demo_Sources/debug.c</name>
