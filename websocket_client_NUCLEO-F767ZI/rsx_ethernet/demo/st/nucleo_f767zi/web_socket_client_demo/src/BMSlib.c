@@ -7,6 +7,7 @@
 #include "stm32f7xx_hal.h"
 #include "stm32f7xx.h"
 #include "debug.h"
+#include "stm32f7xx_nucleo_144.h"
 
 const uint8_t ADCVSC[4] =   {0x5,0x67,0x74,0x5A}; //cmd and pec of cell voltage and sc conversion pole
 const uint8_t RDSTATB[12]=   {0x0,0x12,0x70,0x24,0,0,0,0,0,0,0,0};
@@ -18,8 +19,10 @@ const uint8_t RDCVB[12] = {0x0,0x6,0x9A,0x94,0,0,0,0,0,0,0,0};
 const uint8_t ADCV[4] = {0x3, 0x60, 0xf4, 0x6c};
 const uint8_t CLRCELL[4] = {0x7,0x11,0xc9,0xc0};
 volatile uint8_t spiTransferComplete = 0;
-
-extern SPI_HandleTypeDef hspi1;
+volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
+ SPI_HandleTypeDef hspi1;
+ TaskHandle_t  spiSendTaskHandle;
+ TaskHandle_t  bmsTaskHandle;
 
 void measure_batt_v(uint16_t* mv, int print){
   adcv();
@@ -54,39 +57,86 @@ void RSX_SPI_Init(void) {
   hspi1.Init.CRCPolynomial = 10;
 }
 
+//nucleo pin assignment
+//CS = PD14
+//SCK = PA5
+//MISO = PA6
+//MOSI = PA7
+
+void rsxBMSTask(void *param){
+	for (;;) {
+        spiCmd = SPI_CMD_ADCV;
+        xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
+        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+        vTaskDelay(pdMS_TO_TICKS(500));
+	}
+}
+
+
+void rsxSpiSendTask(void *arg){
+    for (;;) {
+        // Wait until any SPI command is posted
+        xTaskNotifyWait( 0, SPI_ANY_CMD,  NULL, portMAX_DELAY);
+        switch (spiCmd){
+            case SPI_CMD_ADCV:
+                adcv();
+                break;
+
+            default:
+                break;
+        }
+        // Wait for DMA completion from HAL_SPI_TxCpltCallback
+        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+        // Notify worker
+        xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
+    }
+}
+
 void SPItransfer(const uint8_t* buffer, uint16_t size){ //send buffer
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-  HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
+//  HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
+//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	SPIx__CS_LOW();
+	HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
+	SPIx__CS_HIGH();
 }
 
 void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size){
   //send buffer, receive rx at same time. rx and buffer have are "size" bytes
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) buffer,rx, size, 100);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
+//  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) buffer,rx, size, 100);
+//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	SPIx__CS_LOW();
+	HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) buffer,rx, size, 100);
+	SPIx__CS_HIGH();
 }
 
 void SPItransferDMA(const uint8_t* buffer, uint16_t size){ //send buffer
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
+	SPIx__CS_LOW();
+  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
   HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) buffer, size);
 }
 
 void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size){ //send buffer
   spiTransferComplete = 0;
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
+  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
+  SPIx__CS_LOW();
   HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*) buffer,rx, size);
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
   while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY) != RESET);  // Wait for SPI to finish shifting out last bits
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
+  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
+  SPIx__CS_HIGH();
+  xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY) != RESET);  // Wait for SPI to finish shifting out last bits
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
+  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
+  SPIx__CS_HIGH();
   spiTransferComplete = 1;
+  xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
 }
 
 void print_buffer(uint8_t* buffer, int buffer_size){

@@ -1,6 +1,11 @@
 #ifndef BMS_HEADER
 #define BMS_HEADER
 #include <stdint.h>
+#include "stm32f7xx.h"
+#include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_spi.h"
+#include "os_port.h"
+
 extern const uint8_t ADCVSC[4]; //cmd and pec of cell voltage and sc conversion pole
 extern const uint8_t RDSTATB[12];
 extern const uint8_t RDCFG[12];
@@ -11,7 +16,19 @@ extern const uint8_t RDCVB[12];
 extern const uint8_t ADCV[4];
 extern const uint8_t CLRCELL[4];
 
+extern TaskHandle_t  spiSendTaskHandle;
+extern TaskHandle_t  bmsTaskHandle;
+extern SPI_HandleTypeDef hspi1;
+
+typedef enum {
+    SPI_CMD_NONE = 0,
+    SPI_CMD_ADCV,
+} SPI_Command_t;
+extern volatile SPI_Command_t spiCmd;
+
 #define NUMCELLS 4
+#define SPI_ANY_CMD   (1U << 0)
+#define SPI_TX_DONE   (1U << 1)
 
 void measure_batt_v(uint16_t* mv, int print);
 void RSX_SPI_Init(void);
@@ -33,6 +50,8 @@ void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size);
 void SPItransferDMA(const uint8_t* buffer, uint16_t size);
 void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size);
 
+void rsxBMSTask(void *param);
+void rsxSpiSendTask(void *arg);
 
 
 #endif
