@@ -23,24 +23,26 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  SPI_HandleTypeDef hspi1;
  TaskHandle_t  spiSendTaskHandle;
  TaskHandle_t  bmsTaskHandle;
+ DMA_HandleTypeDef hdma_spi1_tx;
+ DMA_HandleTypeDef hdma_spi1_rx;
 
-void measure_batt_v(uint16_t* mv, int print){
-  adcv();
-  //measure Voltage - adcv may take some time
-  uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
-  rdvab(cell_voltage_100uV, NUMCELLS);
-
-  if(print){
-    HAL_Delay(100);
-
-    TRACE_INFO("measured voltages 1 to 6:");
-    for(int i=0; i < NUMCELLS; i++){
-        mv[i] = cell_voltage_100uV[i] / 10; //get in mV
-        TRACE_INFO("%d", mv[i]);
-    }
-    TRACE_INFO("mV\n");
-  }
-}
+//void measure_batt_v(uint16_t* mv, int print){
+//  adcv();
+//  //measure Voltage - adcv may take some time
+//  uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
+//  rdvab(cell_voltage_100uV, NUMCELLS);
+//
+//  if(print){
+//    HAL_Delay(100);
+//
+//    TRACE_INFO("measured voltages 1 to 6:");
+//    for(int i=0; i < NUMCELLS; i++){
+//        mv[i] = cell_voltage_100uV[i] / 10; //get in mV
+//        TRACE_INFO("%d", mv[i]);
+//    }
+//    TRACE_INFO("mV\n");
+//  }
+//}
 
 void RSX_SPI_Init(void) {
   hspi1.Instance = SPI1;
@@ -55,7 +57,45 @@ void RSX_SPI_Init(void) {
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 10;
+
+  RSX_SPI_MspInit(&hspi1);
 }
+
+void RSX_SPI_MspInit(SPI_HandleTypeDef* spiHandle){
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    if(spiHandle->Instance == SPI1)
+    {
+        /* SPI1 clock enable */
+    	NUCLEO_SPIx_CLK_ENABLE();
+        /* SPI1 GPIO configuration: SCK/ MISO/ MOSI */
+    	NUCLEO_SPIx_SCK_GPIO_CLK_ENABLE();
+    	/* SPI1 GPIO configuration: CS */
+    	NUCLEO_SPIx_CS_GPIO_CLK_ENABLE();
+
+        GPIO_InitStruct.Pin = NUCLEO_SPIx_SCK_PIN | NUCLEO_SPIx_MISO_PIN | NUCLEO_SPIx_MOSI_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = NUCLEO_SPIx_SCK_AF;  // GPIO_AF5_SPI1, AF5 = SPI1
+        HAL_GPIO_Init(NUCLEO_SPIx_SCK_GPIO_PORT, &GPIO_InitStruct); //GPIO_A for both SCK and MOSI and MISO
+
+        //config CS
+        GPIO_InitStruct.Pin = NUCLEO_SPIx_CS_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        HAL_GPIO_Init(NUCLEO_SPIx_CS_GPIO_PORT, &GPIO_InitStruct); //GPIO_A for both SCK and MOSI and MISO
+        HAL_GPIO_WritePin(NUCLEO_SPIx_CS_GPIO_PORT, NUCLEO_SPIx_CS_PIN, GPIO_PIN_SET);
+
+        HAL_NVIC_SetPriority(SPI1_IRQn, 5, 0);
+        HAL_NVIC_EnableIRQ(SPI1_IRQn);
+        __HAL_LINKDMA(&hspi1, hdmatx, hdma_spi1_tx);
+        __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
+
+
+    }
+}
+
 
 //nucleo pin assignment
 //CS = PD14
@@ -65,10 +105,18 @@ void RSX_SPI_Init(void) {
 
 void rsxBMSTask(void *param){
 	for (;;) {
-        spiCmd = SPI_CMD_ADCV;
-        xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
-        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+//        spiCmd = SPI_CMD_ADCV;
+//        xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
+//		TRACE_INFO("RSX: BMS loop\n");
+//        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+//		TRACE_INFO("RSX: BMS SPI_TX_DONE\n");
+
+        SPIx__CS_LOW();
+        TRACE_INFO("RSX: cs low\r\n");
         vTaskDelay(pdMS_TO_TICKS(500));
+        SPIx__CS_HIGH();
+        vTaskDelay(pdMS_TO_TICKS(500));
+
 	}
 }
 
@@ -77,9 +125,16 @@ void rsxSpiSendTask(void *arg){
     for (;;) {
         // Wait until any SPI command is posted
         xTaskNotifyWait( 0, SPI_ANY_CMD,  NULL, portMAX_DELAY);
+        TRACE_INFO("RSX: SPI send loop\n");
         switch (spiCmd){
             case SPI_CMD_ADCV:
-                adcv();
+                TRACE_INFO("RSX: SPI send SPI_CMD_ADCV\n");
+                //adcv();
+                SPItransfer(ADCV, 4);
+                TRACE_INFO("RSX: SPI send SPI_CMD_ADCV done\n");
+                SPIx__CS_LOW();
+                TRACE_INFO("RSX: SPI send cs low done\n");
+
                 break;
 
             default:
@@ -87,6 +142,7 @@ void rsxSpiSendTask(void *arg){
         }
         // Wait for DMA completion from HAL_SPI_TxCpltCallback
         xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+        TRACE_INFO("RSX: SPI receive SPI_TX_DONE \n");
         // Notify worker
         xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
     }
@@ -112,9 +168,11 @@ void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size){
 }
 
 void SPItransferDMA(const uint8_t* buffer, uint16_t size){ //send buffer
+	TRACE_INFO("RSX: SPItransferDMA \n");
 	SPIx__CS_LOW();
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
   HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) buffer, size);
+  TRACE_INFO("RSX: SPItransferDMA done\n");
 }
 
 void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size){ //send buffer
@@ -129,6 +187,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
   SPIx__CS_HIGH();
   xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
+  TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \n");
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
@@ -137,6 +196,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   SPIx__CS_HIGH();
   spiTransferComplete = 1;
   xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
+  TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \n");
 }
 
 void print_buffer(uint8_t* buffer, int buffer_size){
@@ -147,6 +207,7 @@ void print_buffer(uint8_t* buffer, int buffer_size){
 }
 
 void adcv() {
+	TRACE_INFO("adcv");
   SPItransferDMA(ADCV, 4);
 }
 

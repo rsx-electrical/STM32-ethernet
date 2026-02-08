@@ -918,7 +918,7 @@ int_t main(void) {
   taskParams = OS_TASK_DEFAULT_PARAMS;
   taskParams.stackSize = 200;
   taskParams.priority = OS_TASK_PRIORITY_NORMAL;
-
+/*
   // Create a task to blink the LED
   taskId = osCreateTask("LED", ledTask, NULL, &taskParams);
   // Failed to create the task?
@@ -938,7 +938,7 @@ int_t main(void) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
-
+*/
   bmsTaskHandle = osCreateTask("bms", rsxBMSTask, NULL, &taskParams);
   if (bmsTaskHandle == NULL) {
     // Debug message
