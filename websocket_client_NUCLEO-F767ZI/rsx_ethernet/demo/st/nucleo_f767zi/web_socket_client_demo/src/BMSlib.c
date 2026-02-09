@@ -58,33 +58,53 @@ void RSX_SPI_Init(void) {
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 10;
 
-  RSX_SPI_MspInit(&hspi1);
+  HAL_StatusTypeDef status = HAL_SPI_Init(&hspi1);
+  if (status != HAL_OK) TRACE_INFO("RSX: BMS HAL_SPI_Init failed\n");
+
 }
 
-void RSX_SPI_MspInit(SPI_HandleTypeDef* spiHandle){
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
+void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically calls HAL_SPI_MspInit(&hspi1) inside HAL_SPI_Init()
+    GPIO_InitTypeDef GPIO_InitStruct = {0}, GPIO_InitStruct_CS = {0};
+
     if(spiHandle->Instance == SPI1)
     {
         /* SPI1 clock enable */
     	NUCLEO_SPIx_CLK_ENABLE();
         /* SPI1 GPIO configuration: SCK/ MISO/ MOSI */
     	NUCLEO_SPIx_SCK_GPIO_CLK_ENABLE();
+    	NUCLEO_SPIx_MISO_MOSI_GPIO_CLK_ENABLE();
     	/* SPI1 GPIO configuration: CS */
     	NUCLEO_SPIx_CS_GPIO_CLK_ENABLE();
 
-        GPIO_InitStruct.Pin = NUCLEO_SPIx_SCK_PIN | NUCLEO_SPIx_MISO_PIN | NUCLEO_SPIx_MOSI_PIN;
+        GPIO_InitStruct.Pin = NUCLEO_SPIx_SCK_PIN;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
         GPIO_InitStruct.Alternate = NUCLEO_SPIx_SCK_AF;  // GPIO_AF5_SPI1, AF5 = SPI1
         HAL_GPIO_Init(NUCLEO_SPIx_SCK_GPIO_PORT, &GPIO_InitStruct); //GPIO_A for both SCK and MOSI and MISO
 
-        //config CS
-        GPIO_InitStruct.Pin = NUCLEO_SPIx_CS_PIN;
-        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        // MOSI (PB5)
+        GPIO_InitStruct.Pin = GPIO_PIN_5;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-        HAL_GPIO_Init(NUCLEO_SPIx_CS_GPIO_PORT, &GPIO_InitStruct); //GPIO_A for both SCK and MOSI and MISO
+        GPIO_InitStruct.Alternate = NUCLEO_SPIx_MISO_MOSI_AF;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+        // MISO (PA6)
+        GPIO_InitStruct.Pin = NUCLEO_SPIx_MISO_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;      // AF_PP works for input as well
+        GPIO_InitStruct.Pull = GPIO_NOPULL;          // or GPIO_PULLUP if desired
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = NUCLEO_SPIx_MISO_MOSI_AF;
+        HAL_GPIO_Init(NUCLEO_SPIx_MISO_MOSI_GPIO_PORT, &GPIO_InitStruct);
+
+        //config CS (PD14)
+        GPIO_InitStruct_CS.Pin = NUCLEO_SPIx_CS_PIN;
+        GPIO_InitStruct_CS.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct_CS.Pull = GPIO_NOPULL;
+        GPIO_InitStruct_CS.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        HAL_GPIO_Init(NUCLEO_SPIx_CS_GPIO_PORT, &GPIO_InitStruct_CS); //GPIO_D
         HAL_GPIO_WritePin(NUCLEO_SPIx_CS_GPIO_PORT, NUCLEO_SPIx_CS_PIN, GPIO_PIN_SET);
 
         HAL_NVIC_SetPriority(SPI1_IRQn, 5, 0);
@@ -96,45 +116,30 @@ void RSX_SPI_MspInit(SPI_HandleTypeDef* spiHandle){
     }
 }
 
-
-//nucleo pin assignment
-//CS = PD14
-//SCK = PA5
-//MISO = PA6
-//MOSI = PA7
-
 void rsxBMSTask(void *param){
 	for (;;) {
-//        spiCmd = SPI_CMD_ADCV;
-//        xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
-//		TRACE_INFO("RSX: BMS loop\n");
-//        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-//		TRACE_INFO("RSX: BMS SPI_TX_DONE\n");
-
-        SPIx__CS_LOW();
-        TRACE_INFO("RSX: cs low\r\n");
-        vTaskDelay(pdMS_TO_TICKS(500));
-        SPIx__CS_HIGH();
-        vTaskDelay(pdMS_TO_TICKS(500));
+        spiCmd = SPI_CMD_ADCV;
+        xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
+		TRACE_INFO("RSX: BMS loop\n");
+		vTaskDelay(pdMS_TO_TICKS(200));
 
 	}
 }
 
 
 void rsxSpiSendTask(void *arg){
+	uint8_t txTest[2] = {0xAA, 0x55};
     for (;;) {
         // Wait until any SPI command is posted
         xTaskNotifyWait( 0, SPI_ANY_CMD,  NULL, portMAX_DELAY);
-        TRACE_INFO("RSX: SPI send loop\n");
+        //TRACE_INFO("RSX: SPI send loop\n");
         switch (spiCmd){
             case SPI_CMD_ADCV:
-                TRACE_INFO("RSX: SPI send SPI_CMD_ADCV\n");
-                //adcv();
-                SPItransfer(ADCV, 4);
-                TRACE_INFO("RSX: SPI send SPI_CMD_ADCV done\n");
                 SPIx__CS_LOW();
-                TRACE_INFO("RSX: SPI send cs low done\n");
+                HAL_StatusTypeDef st = HAL_SPI_Transmit(&hspi1, txTest, 2, 1000);
+                SPIx__CS_HIGH();
 
+                if(st != HAL_OK) TRACE_ERROR("SPI1 transmit failed: %d\n", st);
                 break;
 
             default:
