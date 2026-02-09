@@ -32,7 +32,6 @@ extern volatile SPI_Command_t spiCmd;
 
 //void measure_batt_v(uint16_t* mv, int print);
 void RSX_SPI_Init(void);
-void RSX_SPI_MspInit(SPI_HandleTypeDef* spiHandle);
 void wakeup(); //wake up spi interface (not working)
 void adcvsc(); //measure all cells and sum of all cells
 void adcv();  //measure all cells
