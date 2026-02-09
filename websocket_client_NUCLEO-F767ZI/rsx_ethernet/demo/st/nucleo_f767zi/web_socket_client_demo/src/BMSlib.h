@@ -19,6 +19,8 @@ extern const uint8_t CLRCELL[4];
 extern TaskHandle_t  spiSendTaskHandle;
 extern TaskHandle_t  bmsTaskHandle;
 extern SPI_HandleTypeDef hspi1;
+extern DMA_HandleTypeDef hdma_spi1_tx;
+extern DMA_HandleTypeDef hdma_spi1_rx;
 
 typedef enum {
     SPI_CMD_NONE = 0,
@@ -28,7 +30,7 @@ extern volatile SPI_Command_t spiCmd;
 
 #define NUMCELLS 4
 #define SPI_ANY_CMD   (1U << 0)
-#define SPI_TX_DONE   (1U << 1)
+#define SPI_TX_DONE   (1U << 3)
 
 //void measure_batt_v(uint16_t* mv, int print);
 void RSX_SPI_Init(void);

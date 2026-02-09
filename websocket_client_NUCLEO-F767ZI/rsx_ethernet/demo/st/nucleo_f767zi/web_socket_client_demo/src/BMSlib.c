@@ -9,6 +9,8 @@
 #include "debug.h"
 #include "stm32f7xx_nucleo_144.h"
 
+
+
 const uint8_t ADCVSC[4] =   {0x5,0x67,0x74,0x5A}; //cmd and pec of cell voltage and sc conversion pole
 const uint8_t RDSTATB[12]=   {0x0,0x12,0x70,0x24,0,0,0,0,0,0,0,0};
 const uint8_t RDCFG[12] = {0x0,0x2,0x2B,0xA,0,0,0,0,0,0,0,0};
@@ -107,12 +109,49 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically call
         HAL_GPIO_Init(NUCLEO_SPIx_CS_GPIO_PORT, &GPIO_InitStruct_CS); //GPIO_D
         HAL_GPIO_WritePin(NUCLEO_SPIx_CS_GPIO_PORT, NUCLEO_SPIx_CS_PIN, GPIO_PIN_SET);
 
-        HAL_NVIC_SetPriority(SPI1_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(SPI1_IRQn);
-        __HAL_LINKDMA(&hspi1, hdmatx, hdma_spi1_tx);
-        __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
+        __HAL_RCC_DMA2_CLK_ENABLE();
+        // 6) Configure TX DMA (SPI1_TX = DMA2_Stream3_Channel3)
+          hdma_spi1_tx.Instance = DMA2_Stream3;
+          hdma_spi1_tx.Init.Channel = DMA_CHANNEL_3;
+          hdma_spi1_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
+          hdma_spi1_tx.Init.PeriphInc = DMA_PINC_DISABLE;
+          hdma_spi1_tx.Init.MemInc = DMA_MINC_ENABLE;
+          hdma_spi1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+          hdma_spi1_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+          hdma_spi1_tx.Init.Mode = DMA_NORMAL;
+          hdma_spi1_tx.Init.Priority = DMA_PRIORITY_HIGH;
+          hdma_spi1_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 
+          HAL_DMA_Init(&hdma_spi1_tx);
 
+          __HAL_LINKDMA(&hspi1, hdmatx, hdma_spi1_tx);
+
+          // 7) Configure RX DMA (SPI1_RX = DMA2_Stream0_Channel3)
+          hdma_spi1_rx.Instance = DMA2_Stream0;
+          hdma_spi1_rx.Init.Channel = DMA_CHANNEL_3;
+          hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+          hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+          hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;
+          hdma_spi1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+          hdma_spi1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+          hdma_spi1_rx.Init.Mode = DMA_NORMAL;
+          hdma_spi1_rx.Init.Priority = DMA_PRIORITY_HIGH;
+          hdma_spi1_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+          HAL_DMA_Init(&hdma_spi1_rx);
+
+          __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
+
+          // 8) Enable NVIC for DMA
+          HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0); // TX
+          HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+
+          HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0); // RX
+          HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+
+          // 9) SPI IRQ (optional if using interrupts)
+          HAL_NVIC_SetPriority(SPI1_IRQn, 5, 0);
+          HAL_NVIC_EnableIRQ(SPI1_IRQn);
     }
 }
 
@@ -120,7 +159,7 @@ void rsxBMSTask(void *param){
 	for (;;) {
         spiCmd = SPI_CMD_ADCV;
         xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
-		TRACE_INFO("RSX: BMS loop\n");
+        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
 		vTaskDelay(pdMS_TO_TICKS(200));
 
 	}
@@ -128,26 +167,33 @@ void rsxBMSTask(void *param){
 
 
 void rsxSpiSendTask(void *arg){
-	uint8_t txTest[2] = {0xAA, 0x55};
+
     for (;;) {
         // Wait until any SPI command is posted
         xTaskNotifyWait( 0, SPI_ANY_CMD,  NULL, portMAX_DELAY);
         //TRACE_INFO("RSX: SPI send loop\n");
         switch (spiCmd){
             case SPI_CMD_ADCV:
-                SPIx__CS_LOW();
-                HAL_StatusTypeDef st = HAL_SPI_Transmit(&hspi1, txTest, 2, 1000);
-                SPIx__CS_HIGH();
-
-                if(st != HAL_OK) TRACE_ERROR("SPI1 transmit failed: %d\n", st);
+                //PItransferDMA(ADCV, 4);
+            	TRACE_INFO("SPI state = %d\r\n", hspi1.State);
+            	SPIx__CS_LOW();
+            	HAL_StatusTypeDef st = HAL_SPI_Transmit_DMA(&hspi1, ADCV, 4) ;
+            	TRACE_INFO("SPI DMA status = %d\r\n", st);
+                if (st != HAL_OK)
+                {
+                    SPIx__CS_HIGH();
+                    continue;   // 🔴 DO NOT WAIT FOR SPI_TX_DONE
+                }
                 break;
 
             default:
                 break;
         }
         // Wait for DMA completion from HAL_SPI_TxCpltCallback
+    	TRACE_INFO("SPI state 2= %d\r\n", hspi1.State);
         xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-        TRACE_INFO("RSX: SPI receive SPI_TX_DONE \n");
+        TRACE_INFO("RSX: SPI receive SPI_TX_DONE \r\n");
+        SPIx__CS_HIGH();
         // Notify worker
         xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
     }
@@ -173,11 +219,11 @@ void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size){
 }
 
 void SPItransferDMA(const uint8_t* buffer, uint16_t size){ //send buffer
-	TRACE_INFO("RSX: SPItransferDMA \n");
+	TRACE_INFO("SPI state = %d\r\n", hspi1.State);
 	SPIx__CS_LOW();
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-  HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) buffer, size);
-  TRACE_INFO("RSX: SPItransferDMA done\n");
+	HAL_StatusTypeDef st = HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) buffer, size);
+	TRACE_INFO("SPI DMA status = %d\r\n", st);
 }
 
 void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size){ //send buffer
@@ -188,11 +234,26 @@ void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size){ /
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-  while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY) != RESET);  // Wait for SPI to finish shifting out last bits
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
-  SPIx__CS_HIGH();
-  xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
-  TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \n");
+//    if (hspi->Instance != SPI1 || hspi != &hspi1){
+//    	TRACE_INFO("RSX: HAL_SPI_TxCpltCallback bad\r\n");
+//    	return;
+//    }
+//
+//
+//  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+//	//while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY) != RESET);  // Wait for SPI to finish shifting out last bits
+//  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
+//  SPIx__CS_HIGH();
+//  //TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \r\n");
+//  xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, &xHigherPriorityTaskWoken);
+//  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if (hspi->Instance == SPI1)
+    {
+        SPIx__CS_HIGH();
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
@@ -200,8 +261,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
   SPIx__CS_HIGH();
   spiTransferComplete = 1;
-  xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
-  TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \n");
+  //xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
+  //TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \n");
 }
 
 void print_buffer(uint8_t* buffer, int buffer_size){
