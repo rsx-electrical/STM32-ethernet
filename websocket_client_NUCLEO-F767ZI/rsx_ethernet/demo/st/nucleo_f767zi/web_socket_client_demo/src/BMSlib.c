@@ -27,24 +27,32 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  TaskHandle_t  bmsTaskHandle;
  DMA_HandleTypeDef hdma_spi1_tx;
  DMA_HandleTypeDef hdma_spi1_rx;
+ uint16_t voltage_mv[NUMCELLS];
 
-//void measure_batt_v(uint16_t* mv, int print){
-//  adcv();
-//  //measure Voltage - adcv may take some time
-//  uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
-//  rdvab(cell_voltage_100uV, NUMCELLS);
-//
-//  if(print){
-//    HAL_Delay(100);
-//
-//    TRACE_INFO("measured voltages 1 to 6:");
-//    for(int i=0; i < NUMCELLS; i++){
-//        mv[i] = cell_voltage_100uV[i] / 10; //get in mV
-//        TRACE_INFO("%d", mv[i]);
-//    }
-//    TRACE_INFO("mV\n");
-//  }
-//}
+void measure_batt_v(uint16_t* mv, int print){
+  adcv();
+  //measure Voltage - adcv may take some time
+  uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
+  rdvab(cell_voltage_100uV, NUMCELLS);
+
+  if(print){
+    HAL_Delay(100);
+
+    for(int i=0; i < NUMCELLS; i++){
+        mv[i] = cell_voltage_100uV[i] / 10; //get in mV
+        TRACE_INFO("C%0d=%d ", i, mv[i]);
+    }
+    TRACE_INFO("mV\r\n");
+
+    TRACE_INFO("absolute voltages:");
+    float tmp=0;
+    for(int i=0; i < NUMCELLS; i++){
+        TRACE_INFO("%2.3f ", tmp + (float)(cell_voltage_100uV[i]) / 10000);
+        tmp = tmp + (float)(cell_voltage_100uV[i]) / 10000;
+    }
+    TRACE_INFO("V\r\n");
+  }
+}
 
 void RSX_SPI_Init(void) {
   hspi1.Instance = SPI1;
@@ -156,6 +164,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically call
 }
 
 void rsxBMSTask(void *param){
+	init_PEC15_Table();
 	for (;;) {
         spiCmd = SPI_CMD_ADCV;
         xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
@@ -167,34 +176,16 @@ void rsxBMSTask(void *param){
 
 
 void rsxSpiSendTask(void *arg){
-
     for (;;) {
         // Wait until any SPI command is posted
         xTaskNotifyWait( 0, SPI_ANY_CMD,  NULL, portMAX_DELAY);
         //TRACE_INFO("RSX: SPI send loop\n");
         switch (spiCmd){
             case SPI_CMD_ADCV:
-                //PItransferDMA(ADCV, 4);
-            	TRACE_INFO("SPI state = %d\r\n", hspi1.State);
-            	SPIx__CS_LOW();
-            	HAL_StatusTypeDef st = HAL_SPI_Transmit_DMA(&hspi1, ADCV, 4) ;
-            	TRACE_INFO("SPI DMA status = %d\r\n", st);
-                if (st != HAL_OK)
-                {
-                    SPIx__CS_HIGH();
-                    continue;   // 🔴 DO NOT WAIT FOR SPI_TX_DONE
-                }
-                break;
-
+            	measure_batt_v(voltage_mv, 1);
             default:
                 break;
         }
-        // Wait for DMA completion from HAL_SPI_TxCpltCallback
-    	TRACE_INFO("SPI state 2= %d\r\n", hspi1.State);
-        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-        TRACE_INFO("RSX: SPI receive SPI_TX_DONE \r\n");
-        SPIx__CS_HIGH();
-        // Notify worker
         xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
     }
 }
@@ -234,19 +225,7 @@ void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size){ /
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-//    if (hspi->Instance != SPI1 || hspi != &hspi1){
-//    	TRACE_INFO("RSX: HAL_SPI_TxCpltCallback bad\r\n");
-//    	return;
-//    }
-//
-//
-//  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-//	//while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY) != RESET);  // Wait for SPI to finish shifting out last bits
-//  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
-//  SPIx__CS_HIGH();
-//  //TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \r\n");
-//  xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, &xHigherPriorityTaskWoken);
-//  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
     if (hspi->Instance == SPI1)
     {
         SPIx__CS_HIGH();
@@ -269,12 +248,13 @@ void print_buffer(uint8_t* buffer, int buffer_size){
   for (int i = 0; i < buffer_size; i++){
 	  TRACE_INFO("%X ", buffer[i]);
   }
-  TRACE_INFO("\n");
+  TRACE_INFO("\r\n");
 }
 
 void adcv() {
-	TRACE_INFO("adcv");
-  SPItransferDMA(ADCV, 4);
+  //SPItransferDMA(ADCV, 4);
+	TRACE_INFO("acdv\r\n");
+  SPItransfer(ADCV, 4);
 }
 
 void wrcfg(uint8_t* data, int data_size){
@@ -295,44 +275,36 @@ void wrcfg(uint8_t* data, int data_size){
   txbuffer[10] = pec0; //copy pec
   txbuffer[11] = pec1; //copy pec
 
-  // TRACE_INFO("sent 0x");
-  // print_buffer(txbuffer, 12);
-  // TRACE_INFO("\n");
-  SPItransferDMA(txbuffer, 12); //send and receive data at the same time
+  //SPItransferDMA(txbuffer, 12); //send and receive data at the same time
+  SPItransfer(txbuffer, 12);
   while(!spiTransferComplete){}; //poll until spi is done
-  // TRACE_INFO("wrcfg done\n");
 }
 
 
 void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
-  if (CVsize < 6){
-    TRACE_INFO("CV array too small\n");
-    return;
-  }
  //4 uint8_ts sent, 8 uint8_ts received
   uint8_t rxbuffer_a[12], rxbuffer_b[12];
-
-
-  SPItransferReceiveDMA(RDCVA,rxbuffer_a, 12); //send and receive data at the same time
-  while (!spiTransferComplete){}
+  SPItransferReceive(RDCVA,rxbuffer_a, 12);
+  //SPItransferReceiveDMA(RDCVA,rxbuffer_a, 12); //send and receive data at the same time
+  //while (!spiTransferComplete){}
   uint8_t datareceived_a[6];
   memcpy(datareceived_a, &rxbuffer_a[4], 6);
   if(!checkPEC(rxbuffer_a[10], rxbuffer_a[11], datareceived_a, 6)){
-    TRACE_INFO("PEC failed\n");
+    //TRACE_INFO("PEC failed\n");
   }
-  /*
+/*
   TRACE_INFO("Received 1: 0x");
   print_buffer(rxbuffer_a, 12);
   //*/
-
-  SPItransferReceiveDMA(RDCVB,rxbuffer_b, 12);
-  while (!spiTransferComplete){}
+  SPItransferReceive(RDCVB,rxbuffer_b, 12);
+  //SPItransferReceiveDMA(RDCVB,rxbuffer_b, 12);
+  //while (!spiTransferComplete){}
   uint8_t datareceived_b[6];
   memcpy(datareceived_b, &rxbuffer_b[4], 6);
   if(!checkPEC(rxbuffer_b[10], rxbuffer_b[11], datareceived_b, 6)){
-    TRACE_INFO("PEC failed\n");
+    //TRACE_INFO("PEC failed\n");
   }
-  /*
+/*
   TRACE_INFO("Received 2: 0x");
   print_buffer(rxbuffer_b, 12);
   //*/
@@ -343,8 +315,6 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
   CV[4] = (rxbuffer_b[7]<<8) | (rxbuffer_b[6] & 0xFF);
   CV[5] = (rxbuffer_b[9]<<8) | (rxbuffer_b[8] & 0xFF);
 
-  CV[0] += 7000; //Calibration
-  CV[5] += 7000; //Calibration
 
 }
 
@@ -356,9 +326,9 @@ uint8_t checkPEC(uint8_t pec0_received, uint8_t pec1_received, uint8_t* data, in
     return 1;
   }
   else {
-     //TRACE_INFO("pec check failed\n");
-    // TRACE_INFO("exp pec0 %X; exp pec1 %X; rec pec0 %X; rec pec1 %X\n",
-	    //   expected_pec0, expected_pec1, pec0_received, pec1_received);
+     TRACE_INFO("pec check failed\r\n");
+     TRACE_INFO("exp pec0 %X; exp pec1 %X; rec pec0 %X; rec pec1 %X\r\n",
+	       expected_pec0, expected_pec1, pec0_received, pec1_received);
     return 0;
   }
 }
