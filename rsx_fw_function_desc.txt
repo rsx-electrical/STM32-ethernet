@@ -1,0 +1,20 @@
+Estop_toggle(): pulse high for 1s to toggle estop
+
+measure_v():measures voltages of 5, 12, 24, 55V buses
+
+measure_batt(): measures battery voltage (both the bms and adc readings)
+
+measure_a(): measures the arm+motor, charger and batt+ currents
+
+motor_on(): motor_en high
+
+motor_off():motor_en low
+
+arm_on(): arm_en high
+
+arm_off(): arm_en low
+
+<x>_bus_on(): <x>v_en high
+
+<x>_bus_off(): <x>v_en low
+
