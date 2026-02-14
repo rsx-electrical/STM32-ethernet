@@ -1,20 +1,34 @@
 Estop_toggle(): pulse high for 1s to toggle estop
-
+	send:"0" (ESTOP)
+	returns: "0"
 measure_v():measures voltages of 5, 12, 24, 55V buses
-
+	send: "1" (MEASURE_V)
+	returns: string
+	"<5v>;<12v>;<24v>;<55>"
 measure_batt(): measures battery voltage (both the bms and adc readings)
-
+	send: "2" (MEASURE_B)
+	returns: string
+	"bms;<cell1>;<c2>;<c3>;<c4>" in volts
+	"adc;<total>" in volts
 measure_a(): measures the arm+motor, charger and batt+ currents
-
+	send: "3" (MEASURE_B)
+	retruns: string
+	"<arm&motor>;<charger>;<batt+>"
 motor_on(): motor_en high
-
+	send: "4" (MOTOR_ON)
+	returns: "0"
 motor_off():motor_en low
-
+	send: "5" (MOTOR_OFF)
+	returns: "0"
 arm_on(): arm_en high
-
+	send: "6" (ARM_ON)
+	returns: "0"
 arm_off(): arm_en low
-
+	send: "6" (ARM_OFF)
+	returns: "0"
 <x>_bus_on(): <x>v_en high
-
+	send: "7,8,9,10" (5V_ON, 12V_ON...)
+	returns: "0"
 <x>_bus_off(): <x>v_en low
-
+	send: "11,12,13,14" (5V_OFF, 12V_OFF...)
+	returns: "0"
