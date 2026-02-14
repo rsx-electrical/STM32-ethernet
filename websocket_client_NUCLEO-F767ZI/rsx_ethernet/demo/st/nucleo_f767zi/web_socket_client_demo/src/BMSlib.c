@@ -164,6 +164,8 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically call
 }
 
 void rsxBMSTask(void *param){
+	// awaits command from base station
+	// sends command to rsxSpiSendTask
 	init_PEC15_Table();
 	for (;;) {
         spiCmd = SPI_CMD_ADCV;
@@ -191,9 +193,6 @@ void rsxSpiSendTask(void *arg){
 }
 
 void SPItransfer(const uint8_t* buffer, uint16_t size){ //send buffer
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-//  HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 	SPIx__CS_LOW();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
 	SPIx__CS_HIGH();
@@ -201,48 +200,11 @@ void SPItransfer(const uint8_t* buffer, uint16_t size){ //send buffer
 
 void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size){
   //send buffer, receive rx at same time. rx and buffer have are "size" bytes
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-//  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) buffer,rx, size, 100);
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 	SPIx__CS_LOW();
 	HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) buffer,rx, size, 100);
 	SPIx__CS_HIGH();
 }
 
-void SPItransferDMA(const uint8_t* buffer, uint16_t size){ //send buffer
-	TRACE_INFO("SPI state = %d\r\n", hspi1.State);
-	SPIx__CS_LOW();
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-	HAL_StatusTypeDef st = HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) buffer, size);
-	TRACE_INFO("SPI DMA status = %d\r\n", st);
-}
-
-void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size){ //send buffer
-  spiTransferComplete = 0;
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);  // CS LOW
-  SPIx__CS_LOW();
-  HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*) buffer,rx, size);
-}
-
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-
-    if (hspi->Instance == SPI1)
-    {
-        SPIx__CS_HIGH();
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}
-
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-  while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY) != RESET);  // Wait for SPI to finish shifting out last bits
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);  // CS HIGH
-  SPIx__CS_HIGH();
-  spiTransferComplete = 1;
-  //xTaskNotifyFromISR(spiSendTaskHandle, SPI_TX_DONE, eSetBits, NULL);
-  //TRACE_INFO("RSX: HAL_SPI_TxCpltCallback \n");
-}
 
 void print_buffer(uint8_t* buffer, int buffer_size){
   for (int i = 0; i < buffer_size; i++){
@@ -252,8 +214,7 @@ void print_buffer(uint8_t* buffer, int buffer_size){
 }
 
 void adcv() {
-  //SPItransferDMA(ADCV, 4);
-	TRACE_INFO("acdv\r\n");
+	//TRACE_INFO("acdv\r\n");
   SPItransfer(ADCV, 4);
 }
 
@@ -275,9 +236,7 @@ void wrcfg(uint8_t* data, int data_size){
   txbuffer[10] = pec0; //copy pec
   txbuffer[11] = pec1; //copy pec
 
-  //SPItransferDMA(txbuffer, 12); //send and receive data at the same time
-  SPItransfer(txbuffer, 12);
-  while(!spiTransferComplete){}; //poll until spi is done
+  SPItransfer(txbuffer, 12);//send and receive data at the same time
 }
 
 
@@ -285,8 +244,6 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
  //4 uint8_ts sent, 8 uint8_ts received
   uint8_t rxbuffer_a[12], rxbuffer_b[12];
   SPItransferReceive(RDCVA,rxbuffer_a, 12);
-  //SPItransferReceiveDMA(RDCVA,rxbuffer_a, 12); //send and receive data at the same time
-  //while (!spiTransferComplete){}
   uint8_t datareceived_a[6];
   memcpy(datareceived_a, &rxbuffer_a[4], 6);
   if(!checkPEC(rxbuffer_a[10], rxbuffer_a[11], datareceived_a, 6)){
@@ -297,8 +254,6 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
   print_buffer(rxbuffer_a, 12);
   //*/
   SPItransferReceive(RDCVB,rxbuffer_b, 12);
-  //SPItransferReceiveDMA(RDCVB,rxbuffer_b, 12);
-  //while (!spiTransferComplete){}
   uint8_t datareceived_b[6];
   memcpy(datareceived_b, &rxbuffer_b[4], 6);
   if(!checkPEC(rxbuffer_b[10], rxbuffer_b[11], datareceived_b, 6)){
@@ -347,3 +302,28 @@ void dischargeCellX(uint8_t* data, int data_size, int cell_x){ //cell_x takes va
   wrcfg(data, data_size);
   // TRACE_INFO("discharge sent\n");
 }
+
+// // Check user  state
+// if (buttonEventFlag) {
+//   // Clear flag
+//   buttonEventFlag = FALSE;
+
+//   // Format event message
+//   length = sprintf(buffer, "User button pressed!");
+
+//   // Debug message
+//   TRACE_INFO("WebSocket: Sending message (%" PRIuSIZE " bytes)...\r\n",
+//              length);
+//   TRACE_INFO("  %s\r\n", buffer);
+
+//   // Send a message to the WebSocket server
+//   error =
+//       webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+//       NULL);
+//   // Any error to report?
+//   if (error) break;
+
+//   // Save current time
+//   timestamp = osGetSystemTime();
+// }
+
