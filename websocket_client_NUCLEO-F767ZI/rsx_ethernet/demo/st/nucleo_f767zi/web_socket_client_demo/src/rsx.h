@@ -17,6 +17,13 @@ typedef struct {
 #define MOTOR_EN_PORT GPIOD
 #define MOTOR_EN_PIN GPIO_PIN_11
 
+#define LED_GB_PORT GPIOG
+#define LED_G_PIN GPIO_PIN_2
+#define LED_B_PIN GPIO_PIN_3
+
+#define LED_R_PORT GPIOF
+#define LED_R_PIN GPIO_PIN_12
+
 #define ARM_EN_PORT GPIOE
 #define ARM_EN_PIN GPIO_PIN_6
 

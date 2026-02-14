@@ -66,6 +66,30 @@ void bus_55v_off(void) {
   HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
 }
 
+void LED_G_on() {
+	HAL_GPIO_WritePin(LED_BG_PORT, LED_G_PIN, GPIO_PIN_SET);
+}
+
+void LED_G_off() {
+	HAL_GPIO_WritePin(LED_BG_PORT, LED_G_PIN, GPIO_PIN_RESET);
+}
+
+void LED_B_on() {
+	HAL_GPIO_WritePin(LED_BG_PORT, LED_B_PIN, GPIO_PIN_SET);
+}
+
+void LED_B_off() {
+	HAL_GPIO_WritePin(LED_BG_PORT, LED_B_PIN, GPIO_PIN_RESET);
+}
+
+void LED_R_on() {
+	HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_SET);
+}
+
+void LED_R_off() {
+	HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_RESET);
+}
+
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 
