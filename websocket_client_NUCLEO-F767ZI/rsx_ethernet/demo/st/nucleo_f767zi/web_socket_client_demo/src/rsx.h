@@ -86,5 +86,5 @@ void bus_55v_on(void);
 void bus_55v_off(void);
 void Estop_test(void);
 void rsx_test(void);
-
+void shutoff_sequence(void);
 #endif
