@@ -86,6 +86,7 @@ SlaacContext slaacContext;
 HmacDrbgContext hmacDrbgContext;
 uint8_t seed[48];
 ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc3;
 
 /**
  * @brief System clock configuration
@@ -187,8 +188,22 @@ void RSX_GPIO_Init(void) {
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
 
+  // adc initialization
+  hadc3.Instance = ADC3;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc3.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc3.Init.ScanConvMode = DISABLE;
+  hadc3.Init.ContinuousConvMode = DISABLE;
+  hadc3.Init.DiscontinuousConvMode = DISABLE;
+  hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc3.Init.NbrOfConversion = 1;
   /* 3. Apply the config */
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+    TRACE_ERROR("ADC Init Error\r\n");
+  }
+  if (HAL_ADC_Init(&hadc3) != HAL_OK) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
@@ -918,7 +933,7 @@ int_t main(void) {
   taskParams = OS_TASK_DEFAULT_PARAMS;
   taskParams.stackSize = 200;
   taskParams.priority = OS_TASK_PRIORITY_NORMAL;
-/*
+
   // Create a task to blink the LED
   taskId = osCreateTask("LED", ledTask, NULL, &taskParams);
   // Failed to create the task?
@@ -938,7 +953,7 @@ int_t main(void) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
-*/
+
   bmsTaskHandle = osCreateTask("bms", rsxBMSTask, NULL, &taskParams);
   if (bmsTaskHandle == NULL) {
     // Debug message

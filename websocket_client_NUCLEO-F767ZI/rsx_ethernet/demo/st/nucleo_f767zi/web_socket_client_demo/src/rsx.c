@@ -67,14 +67,14 @@ void bus_55v_off(void) {
 }
 
 extern ADC_HandleTypeDef hadc1;
-//extern ADC_HandleTypeDef hadc3;
+extern ADC_HandleTypeDef hadc3;
 
 // Ruth
 static uint16_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
   ADC_ChannelConfTypeDef sConfig = {0};
   sConfig.Channel = channel;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  //sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
+  //sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5; //TODO: this was erroring out, coco commented this out
 
   HAL_ADC_ConfigChannel(hadc,
                         &sConfig);  // Use the passed-in ADC (hadc1 or hadc3)
@@ -90,23 +90,23 @@ static uint16_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
 static float adc_to_voltage(uint16_t adc) { return (adc * VREF) / ADC_MAX; }
 
 void measure_v(void) {
-//  uint16_t adc_12v = adc_read(&hadc1, ADC_CHANNEL_12);
-//  uint16_t adc_17v = adc_read(&hadc1, ADC_CHANNEL_10);
-//  uint16_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);
-//  uint16_t adc_24v = adc_read(&hadc1, ADC_CHANNEL_14);
-//  uint16_t adc_55v = adc_read(&hadc1, ADC_CHANNEL_8);
+  uint16_t adc_12v = adc_read(&hadc1, ADC_CHANNEL_12);
+  uint16_t adc_17v = adc_read(&hadc1, ADC_CHANNEL_10);
+  uint16_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);
+  uint16_t adc_24v = adc_read(&hadc1, ADC_CHANNEL_14);
+  uint16_t adc_55v = adc_read(&hadc1, ADC_CHANNEL_8);
 
-//  float v_12v = adc_to_voltage(adc_12v) * DIV_12V;
-//  float v_17v = adc_to_voltage(adc_17v) * DIV_17V;
-//  float v_19v = adc_to_voltage(adc_19v) * DIV_19V;
-//  float v_24v = adc_to_voltage(adc_24v) * DIV_24V;
-//  float v_55v = adc_to_voltage(adc_55v) * DIV_55V;
+  float v_12v = adc_to_voltage(adc_12v) * DIV_12V;
+  float v_17v = adc_to_voltage(adc_17v) * DIV_17V;
+  float v_19v = adc_to_voltage(adc_19v) * DIV_19V;
+  float v_24v = adc_to_voltage(adc_24v) * DIV_24V;
+  float v_55v = adc_to_voltage(adc_55v) * DIV_55V;
 
-//  //debug_printf("12V: %.2f V\r\n", v_12v);
-//  //debug_printf("17V: %.2f V\r\n", v_17v);
-//  //debug_printf("19V: %.2f V\r\n", v_19v);
-//  //debug_printf("24V: %.2f V\r\n", v_24v);
-//  //debug_printf("55V: %.2f V\r\n", v_55v);
+  TRACE_INFO("12V: %.2f V\r\n", v_12v);
+  TRACE_INFO("17V: %.2f V\r\n", v_17v);
+  TRACE_INFO("19V: %.2f V\r\n", v_19v);
+  TRACE_INFO("24V: %.2f V\r\n", v_24v);
+  TRACE_INFO("55V: %.2f V\r\n", v_55v);
 }
 
 // Andrew
@@ -116,10 +116,10 @@ void measure_batt(void) {
 
   float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
   float batt_voltage = pin_voltage * 16.67f;  // placeholder factor
-  //debug_printf("%lf", batt_voltage);
+  TRACE_INFO("%lf", batt_voltage);
   // BMS Measure (todo)
 
-  //debug_printf("Batt: %.2f V\r\n", batt_voltage);
+  TRACE_INFO("Batt: %.2f V\r\n", batt_voltage);
 }
 
 static float adc_to_current(uint16_t adc, float sensitivity) {
@@ -130,10 +130,9 @@ static float adc_to_current(uint16_t adc, float sensitivity) {
 
 // Tanmay
 void measure_a(void) {
-	/*
   uint16_t adc_arm_motor = adc_read(&hadc1, ADC_CHANNEL_13);
-//  uint16_t adc_charger = adc_read(&hadc3, ADC_CHANNEL_9);
-//  uint16_t adc_batt = adc_read(&hadc3, ADC_CHANNEL_15);
+  uint16_t adc_charger = adc_read(&hadc3, ADC_CHANNEL_9);
+  uint16_t adc_batt = adc_read(&hadc3, ADC_CHANNEL_15);
 
   float i_arm_motor =
       adc_to_current(adc_arm_motor, 0.0133f);  // placeholder sensitivity
@@ -141,8 +140,8 @@ void measure_a(void) {
       adc_to_current(adc_charger, 0.0660f);          // placeholder sensitivity
   float i_batt = adc_to_current(adc_batt, 0.0110f);  // placeholder sensitivity
 
-  //debug_printf("Currents - Arm+Motor: %.1fA, Charger: %.1fA, Batt: %.1fA\r\n",
-               //i_arm_motor, i_charger, i_batt);*/
+  TRACE_INFO("Currents - Arm+Motor: %.1fA, Charger: %.1fA, Batt: %.1fA\r\n",
+               i_arm_motor, i_charger, i_batt);
 }
 
 // Turn off buses, arm, and motor
