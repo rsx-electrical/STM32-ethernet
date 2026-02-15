@@ -1,7 +1,7 @@
 #include "rsx.h"
 
 #include <stdlib.h>
-
+#include <limits.h>
 #include "debug.h"
 
 extern ADC_HandleTypeDef hadc1;
@@ -268,4 +268,53 @@ void Estop_test(void) {
   measure_batt();
   // Turn off all pins in case
   shutoff_sequence();
+}
+
+
+int parse_int(char_t *received_cmd, int *out)
+{
+    char *end;
+    long val = strtol(received_cmd, &end, 10);
+
+    if (end == received_cmd)  return 1;          // no digits found
+    // allow trailing whitespace / CRLF
+    while (*end == ' ' || *end == '\r' || *end == '\n' || *end == '\t') end++;
+    if (*end != '\0')   return 1;        // extra junk in buffer
+    if (val < INT_MIN || val > INT_MAX) return 1;              // overflow for int
+
+    *out = (int)val;
+    //send the command to rsx_task
+    xTaskNotify(rsx_task_handle, (1U << val) , eSetBits);
+    return 0;                  // success
+}
+
+void rsxTask(void *param){
+	uint32_t rsx_task_received;
+	for (;;) {
+        xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &rsx_task_received, portMAX_DELAY);
+        TRACE_INFO("rsx_task_received = %x\r\n", rsx_task_received);
+        if (rsx_task_received & ESTOP_CMD) 		Estop_toggle();
+        if (rsx_task_received & MEASURE_V_CMD) 	measure_v();
+        if (rsx_task_received & MEASURE_B_CMD){
+            //xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
+            //xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+        	measure_batt_v(voltage_mv, 1);
+            measure_batt();
+        }
+        if (rsx_task_received & MEASURE_A_CMD) 	measure_a();
+        if (rsx_task_received & MOTOR_ON_CMD) 	motor_on();
+        if (rsx_task_received & MOTOR_OFF_CMD) 	motor_off();
+        if (rsx_task_received & ARM_ON_CMD) 	arm_on();
+        if (rsx_task_received & ARM_OFF_CMD) 	arm_off();
+        if (rsx_task_received & ON_5V_CMD) 		bus_5v_on();
+        if (rsx_task_received & OFF_5V_CMD) 	bus_5v_off();
+        if (rsx_task_received & ON_12V_CMD) 	bus_12v_on();
+        if (rsx_task_received & OFF_12V_CMD) 	bus_12v_off();
+        if (rsx_task_received & ON_24V_CMD) 	bus_24v_on();
+        if (rsx_task_received & OFF_24V_CMD) 	bus_24v_off();
+        if (rsx_task_received & ON_55V_CMD) 	bus_55v_on();
+        if (rsx_task_received & OFF_55V_CMD) 	bus_55v_off();
+
+		vTaskDelay(pdMS_TO_TICKS(200));
+	}
 }

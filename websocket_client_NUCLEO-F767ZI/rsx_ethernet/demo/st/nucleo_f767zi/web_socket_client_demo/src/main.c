@@ -77,6 +77,7 @@
 
 // Global variables
 OsEvent appEvent;
+
 bool_t buttonEventFlag;
 
 DhcpClientSettings dhcpClientSettings;
@@ -347,6 +348,7 @@ error_t webSocketClientTest(void) {
   IpAddr serverIpAddr;
   SocketEventDesc eventDesc[1];
   char_t buffer[256];
+  int cmd_received;
 
   // Debug message
   TRACE_INFO("\r\n\r\nWebSocket: Resolving server name...\r\n");
@@ -452,6 +454,11 @@ error_t webSocketClientTest(void) {
                        " bytes)...\r\n",
                        length);
             TRACE_INFO("  %s\r\n", buffer);
+            //parse buffer for command and set events
+            if (parseint(buffer, &cmd_received)) {
+            	TRACE_INFO("failed parsing cmd");
+            }
+
           } else if (type == WS_FRAME_TYPE_PING) {
             // Debug message
             TRACE_INFO("WebSocket: Ping message received (%" PRIuSIZE
@@ -587,13 +594,15 @@ void ledTask(void *param) {
 /**
  * @brief RSX task
  **/
-
+/*
+//COco made a testing version of this function in rsx.c
 void rsxTask(void *param) {
   rsx_test();
   osDelayTask(10000);
   Estop_test();
   osDeleteTask(NULL);
 }
+//*/
 
 #define STATE_IDLE 0
 #define ENABLE_5 1
@@ -942,8 +951,8 @@ int_t main(void) {
     TRACE_ERROR("Failed to create task!\r\n");
   }
 
-  taskId = osCreateTask("rsx", rsxTask, NULL, &taskParams);
-  if (taskId == OS_INVALID_TASK_ID) {
+  rsx_task_handle = osCreateTask("rsx", rsxTask, NULL, &taskParams);
+  if (rsx_task_handle == NULL) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }

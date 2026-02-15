@@ -94,4 +94,25 @@ void bus_55v_off(void);
 void Estop_test(void);
 void rsx_test(void);
 void shutoff_sequence(void);
+
+extern TaskHandle_t  rsx_task_handle;
+
+#define ESTOP_CMD	(1U << 0)
+#define MEASURE_V_CMD (1U << 1)
+#define	MEASURE_B_CMD (1U << 2)
+#define	MEASURE_A_CMD (1U << 3)
+#define	MOTOR_ON_CMD (1U << 4)
+#define	MOTOR_OFF_CMD (1U << 5)
+#define	ARM_ON_CMD (1U << 6)
+#define	ARM_OFF_CMD (1U << 7)
+#define	ON_5V_CMD (1U << 8)
+#define	ON_12V_CMD (1U << 9)
+#define	ON_24V_CMD (1U << 10)
+#define	ON_55V_CMD (1U << 11)
+#define	OFF_5V_CMD (1U << 12)
+#define	OFF_12V_CMD (1U << 13)
+#define	OFF_24V_CMD (1U << 14)
+#define	OFF_55V_CMD (1U << 15)
+
+
 #endif
