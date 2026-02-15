@@ -284,6 +284,7 @@ int parse_int(char_t *received_cmd, int *out)
 
     *out = (int)val;
     //send the command to rsx_task
+    //TODO: enable multiple commands at once
     xTaskNotify(rsx_task_handle, (1U << val) , eSetBits);
     return 0;                  // success
 }
