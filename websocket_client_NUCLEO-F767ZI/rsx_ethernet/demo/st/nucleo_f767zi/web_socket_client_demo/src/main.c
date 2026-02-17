@@ -77,7 +77,6 @@
 
 // Global variables
 OsEvent appEvent;
-
 bool_t buttonEventFlag;
 
 DhcpClientSettings dhcpClientSettings;
