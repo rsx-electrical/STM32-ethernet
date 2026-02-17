@@ -29,7 +29,7 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  DMA_HandleTypeDef hdma_spi1_rx;
  uint16_t voltage_mv[NUMCELLS];
 
-void measure_batt_v(uint16_t* mv, int print){
+void measure_batt_bms(uint16_t* mv, int print){
   adcv();
   //measure Voltage - adcv may take some time
   uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
@@ -163,30 +163,15 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically call
     }
 }
 
-void rsxBMSTask(void *param){
-	// awaits command from base station
-	// sends command to rsxSpiSendTask
-	init_PEC15_Table();
-	for (;;) {
-        spiCmd = SPI_CMD_ADCV;
-        xTaskNotify(spiSendTaskHandle, SPI_ANY_CMD, eSetBits);
-        xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-		vTaskDelay(pdMS_TO_TICKS(200));
-
-	}
-}
-
-
 void rsxSpiSendTask(void *arg){
+	uint32_t spi_task_received;
+	init_PEC15_Table();
     for (;;) {
         // Wait until any SPI command is posted
-        xTaskNotifyWait( 0, SPI_ANY_CMD,  NULL, portMAX_DELAY);
+        xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &spi_task_received, portMAX_DELAY);
         //TRACE_INFO("RSX: SPI send loop\n");
-        switch (spiCmd){
-            case SPI_CMD_ADCV:
-            	measure_batt_v(voltage_mv, 1);
-            default:
-                break;
+        if (spi_task_received & SPI_CMD_ADCV) {
+        	measure_batt_bms(voltage_mv, 1);
         }
         xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
     }

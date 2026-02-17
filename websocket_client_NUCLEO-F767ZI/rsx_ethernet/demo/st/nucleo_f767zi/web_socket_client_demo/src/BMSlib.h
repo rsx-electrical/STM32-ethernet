@@ -35,7 +35,6 @@ extern volatile SPI_Command_t spiCmd;
 //void measure_batt_v(uint16_t* mv, int print);
 void RSX_SPI_Init(void);
 void wakeup(); //wake up spi interface (not working)
-void adcvsc(); //measure all cells and sum of all cells
 void adcv();  //measure all cells
 void rdstatb(); //read status register b
 void rdcfg(uint8_t *CFGR, int CFGR_size); //read configuration register into size 6 uint8_t array "CFGR"
@@ -49,10 +48,7 @@ void SPItransfer(const uint8_t* buffer, uint16_t size);
 void print_msg(char * msg);
 void print_buffer(uint8_t * buffer, int buffer_size);
 void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size);
-void SPItransferDMA(const uint8_t* buffer, uint16_t size);
-void SPItransferReceiveDMA(const uint8_t* buffer, uint8_t* rx, uint16_t size);
-
-void rsxBMSTask(void *param);
+void measure_batt_bms(uint16_t* mv, int print);
 void rsxSpiSendTask(void *arg);
 
 
