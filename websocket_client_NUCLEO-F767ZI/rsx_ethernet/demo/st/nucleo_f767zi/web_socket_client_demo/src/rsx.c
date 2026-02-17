@@ -67,19 +67,19 @@ void bus_55v_off(void) {
 }
 
 void LED_G_on() {
-	HAL_GPIO_WritePin(LED_BG_PORT, LED_G_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
 }
 
 void LED_G_off() {
-	HAL_GPIO_WritePin(LED_BG_PORT, LED_G_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
 }
 
 void LED_B_on() {
-	HAL_GPIO_WritePin(LED_BG_PORT, LED_B_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_SET);
 }
 
 void LED_B_off() {
-	HAL_GPIO_WritePin(LED_BG_PORT, LED_B_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_RESET);
 }
 
 void LED_R_on() {
@@ -276,11 +276,20 @@ int parse_int(char_t *received_cmd, int *out)
     char *end;
     long val = strtol(received_cmd, &end, 10);
 
-    if (end == received_cmd)  return 1;          // no digits found
+    if (end == received_cmd)  {
+    	TRACE_INFO("parse_int end == received_cmd pointer");
+    	return 1;          // no digits found
+    }
     // allow trailing whitespace / CRLF
     while (*end == ' ' || *end == '\r' || *end == '\n' || *end == '\t') end++;
-    if (*end != '\0')   return 1;        // extra junk in buffer
-    if (val < INT_MIN || val > INT_MAX) return 1;              // overflow for int
+    if (*end != '\0')   {
+    	TRACE_INFO("parse_int failed *end != '\\0' ");
+    	return 1;        // extra junk in buffer
+    }
+    if (val < INT_MIN || val > INT_MAX) {
+    	TRACE_INFO("parse_int failed val < INT_MIN || val > INT_MAX ");
+    	return 1;              // overflow for int
+    }
 
     *out = (int)val;
     //send the command to rsx_task
@@ -293,13 +302,14 @@ void rsxTask(void *param){
 	uint32_t rsx_task_received;
 	for (;;) {
         xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &rsx_task_received, portMAX_DELAY);
-        TRACE_INFO("rsx_task_received = %x\r\n", rsx_task_received);
+        TRACE_INFO("rsx_task_received notify bits = 0x%lx\r\n", rsx_task_received);
         if (rsx_task_received & ESTOP_CMD) 		Estop_toggle();
         if (rsx_task_received & MEASURE_V_CMD) 	measure_v();
         if (rsx_task_received & MEASURE_B_CMD){
             //xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
             //xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-        	measure_batt_v(voltage_mv, 1);
+        	uint16_t voltage_mv[NUMCELLS];
+        	measure_batt_bms(voltage_mv, 1);
             measure_batt();
         }
         if (rsx_task_received & MEASURE_A_CMD) 	measure_a();

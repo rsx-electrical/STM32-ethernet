@@ -48,7 +48,7 @@ void SPItransfer(const uint8_t* buffer, uint16_t size);
 void print_msg(char * msg);
 void print_buffer(uint8_t * buffer, int buffer_size);
 void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size);
-
+void measure_batt_bms(uint16_t* mv, int print);
 void rsxSpiSendTask(void *arg);
 
 

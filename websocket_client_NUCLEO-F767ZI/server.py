@@ -3,11 +3,15 @@ import websockets
 clients = set()
 
 async def handler(websocket):
+    clients.add(websocket)         
     print("Connected!!!!")
-    await websocket.send("FINALLY")
-    async for message in websocket:
-        print("TEST: ", message)
-        await websocket.send("ACK: " + message)
+    try:
+        await websocket.send("FINALLY")
+        async for message in websocket:
+            print("TEST: ", message)
+            await websocket.send("ACK: " + message)
+    finally:
+        clients.remove(websocket) 
 
 async def stdin_sender():
     loop = asyncio.get_running_loop()
@@ -15,6 +19,7 @@ async def stdin_sender():
     while True:
         msg = await loop.run_in_executor(None, input)
         for ws in clients:
+            print("SENT CMD: ", msg)
             await ws.send(msg)
 
 async def main():

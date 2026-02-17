@@ -29,7 +29,7 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  DMA_HandleTypeDef hdma_spi1_rx;
  uint16_t voltage_mv[NUMCELLS];
 
-void measure_batt_v(uint16_t* mv, int print){
+void measure_batt_bms(uint16_t* mv, int print){
   adcv();
   //measure Voltage - adcv may take some time
   uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
@@ -171,7 +171,7 @@ void rsxSpiSendTask(void *arg){
         xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &spi_task_received, portMAX_DELAY);
         //TRACE_INFO("RSX: SPI send loop\n");
         if (spi_task_received & SPI_CMD_ADCV) {
-        	measure_batt_v(voltage_mv, 1);
+        	measure_batt_bms(voltage_mv, 1);
         }
         xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
     }

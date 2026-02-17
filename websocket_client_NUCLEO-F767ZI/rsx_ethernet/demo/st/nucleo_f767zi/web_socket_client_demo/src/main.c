@@ -88,6 +88,7 @@ HmacDrbgContext hmacDrbgContext;
 uint8_t seed[48];
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
+TaskHandle_t  rsx_task_handle;
 
 /**
  * @brief System clock configuration
@@ -453,9 +454,9 @@ error_t webSocketClientTest(void) {
             TRACE_INFO("WebSocket: Message received (%" PRIuSIZE
                        " bytes)...\r\n",
                        length);
-            TRACE_INFO("  %s\r\n", buffer);
+            TRACE_INFO("received: \"%s\"\r\n", buffer);
             //parse buffer for command and set events
-            if (parseint(buffer, &cmd_received)) {
+            if (parse_int(buffer, &cmd_received)) {
             	TRACE_INFO("failed parsing cmd");
             }
 
@@ -963,11 +964,6 @@ int_t main(void) {
     TRACE_ERROR("Failed to create task!\r\n");
   }
 
-  bmsTaskHandle = osCreateTask("bms", rsxBMSTask, NULL, &taskParams);
-  if (bmsTaskHandle == NULL) {
-    // Debug message
-    TRACE_ERROR("Failed to create task!\r\n");
-  }
 
   spiSendTaskHandle = osCreateTask("spi_send", rsxSpiSendTask, NULL, &taskParams);
   if (spiSendTaskHandle == NULL) {

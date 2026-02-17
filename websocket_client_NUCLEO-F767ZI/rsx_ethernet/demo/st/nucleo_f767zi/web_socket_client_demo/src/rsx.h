@@ -5,6 +5,8 @@
 
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
+#include "os_port.h"
+#include "BMSlib.h"
 
 // not really using Measurements rn
 typedef struct {
@@ -94,6 +96,8 @@ void bus_55v_off(void);
 void Estop_test(void);
 void rsx_test(void);
 void shutoff_sequence(void);
+int parse_int(char_t *received_cmd, int *out);
+void rsxTask(void *param);
 
 extern TaskHandle_t  rsx_task_handle;
 
