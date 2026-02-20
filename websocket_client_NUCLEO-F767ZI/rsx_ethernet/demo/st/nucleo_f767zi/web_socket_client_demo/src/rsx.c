@@ -9,8 +9,8 @@ extern ADC_HandleTypeDef hadc1;
 void Estop_toggle(void) {
 	 TRACE_INFO("Toggling estop");
   HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_SET);
-  HAL_Delay(5000); //1000ms
-  HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_RESET);
+  //HAL_Delay(5000); //1000ms
+  //HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_RESET);
 }
 
 void arm_on(void) { HAL_GPIO_WritePin(ARM_EN_PORT, ARM_EN_PIN, GPIO_PIN_SET); }

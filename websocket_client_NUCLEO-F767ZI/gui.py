@@ -44,7 +44,7 @@ class ToggleButtonsWindow(QWidget):
             btn = QPushButton(name)
             btn.setCheckable(True)
             btn.setChecked(False)  # Ensure they start OFF
-            btn.setEnabled(False)  # Disabled until BIG POWER ON
+            btn.setEnabled(True)  # always on, not controled by the big
             btn.setFixedSize(QSize(80, 80))  # Make square
             btn.setStyleSheet(
                 "QPushButton {"
@@ -56,7 +56,7 @@ class ToggleButtonsWindow(QWidget):
                 "QPushButton:disabled {background-color: gray; color: darkgray;}"
             )
             btn.clicked.connect(self.button_toggled)
-            btn.clicked.connect(lambda: asyncio.create_task(self.broadcast("Hello!")))
+            #btn.clicked.connect(lambda: asyncio.create_task(self.broadcast("Hello!")))
             self.buttons.append(btn)
             row_layout.addWidget(btn)
         
@@ -84,35 +84,115 @@ class ToggleButtonsWindow(QWidget):
     # Makes toggle mechanism for smaller buttons
     def button_toggled(self):
         # Print states of small buttons
-        states = {btn.text(): btn.isChecked() for btn in self.buttons}
-        print("Button states:", states)
+        #states = {btn.text(): btn.isChecked() for btn in self.buttons}
+        #print("Button states:", states)
+        
+        btn = self.sender()  # the button that was clicked
+        name = btn.text()
+        checked = btn.isChecked()
+
+            # Update flag
+        self.button_flags[name] = checked
+
+            # Look up the correct bitmask command
+        cmd = self.BUTTON_COMMANDS.get(name, {}).get(checked, 0)
+
+        print(f"[GUI DEBUG] Button {name} = {checked}, sending {hex(cmd)}")
+
+            # Broadcast it
+        asyncio.create_task(self.broadcast(cmd))
+        
+    # Bitmask commands (same as your C defines)
+    BUTTON_COMMANDS = {
+        "Motor": {
+            True: 4,   # MOTOR_ON_CMD
+            False: 5,  # MOTOR_OFF_CMD
+        },
+        "Arm": {
+            True: 6,   # ARM_ON_CMD
+            False: 7,  # ARM_OFF_CMD
+        },
+        "5V": {
+            True: 8,   # ON_5V_CMD
+            False: 12, # OFF_5V_CMD
+        },
+        "12V": {
+            True: 9,   # ON_12V_CMD
+            False: 13, # OFF_12V_CMD
+        },
+        "24V": {
+            True: 10,  # ON_24V_CMD
+            False: 14, # OFF_24V_CMD
+        },
+        "55V": {
+            True: 11,  # ON_55V_CMD
+            False: 15, # OFF_55V_CMD
+        },
+        "ESTOP": 0   # Special case: always send 0
+    }
+
     
     def update_flag(self, name, checked):
         self.button_flags[name] = checked
-        message = f"{name}:{int(checked)}"
+        #message = f"{name}:{int(checked)}"
+
+    # Determine message based on which button was pressed
+    
+    
+        # match name:
+        #     case "Motor":
+        #         message = f"MOTOR_STATE:{int(checked)}"
+        #     case "Arm":
+        #         message = f"ARM_STATE:{int(checked)}"
+        #     case "5V":
+        #         message = f"POWER_5V:{int(checked)}"
+        #     case "12V":
+        #         message = f"POWER_12V:{int(checked)}"
+        #     case "24V":
+        #         message = f"POWER_24V:{int(checked)}"
+        #     case "55V":
+        #         message = f"POWER_55V:{int(checked)}"
+        #     case _:
+        #         message = f"{name}:{int(checked)}"  # fallback
+
+        
+        # Look up the corresponding command
+        message = self.BUTTON_COMMANDS.get(name, {}).get(checked, 0)
+
+        # Debug
+        print(f"[GUI DEBUG] Button {name} set to {checked}, sending command: {hex(message)}")
+        
         
         # Schedule async send without blocking GUI
         asyncio.create_task(self.broadcast(message))
     
     async def broadcast(self, message):
         if not self.clients:
-            print("[WS DEBUG] No clients connected.")
+            print("No clients connected.")
             return
-        print(f"[WS DEBUG] Sending to {len(self.clients)} client(s): {message}")
-        await asyncio.gather(*(client.send(message) for client in self.clients), return_exceptions=True)
+
+        print(f"Sending to {len(self.clients)} client(s): {message} ({hex(message)})")
+        await asyncio.gather(
+            *(client.send(str(message)) for client in self.clients),
+            return_exceptions=True
+        )
 
 
     # Makes toggle mechanism for estop
     def master_toggle(self):
         # Enable/disable small buttons based on ESTOP state
-        state = self.estop_btn.isChecked()
-        for btn in self.buttons:
-            btn.setEnabled(state)   # Enable when BIG ESTOP ON, disable when OFF
-            if not state:
-                btn.setChecked(False)  # Turn them off if ESTOP OFF
+        # state = self.estop_btn.isChecked()
+        # for btn in self.buttons:
+        #     btn.setEnabled(state)   # Enable when BIG ESTOP ON, disable when OFF
+        #     if not state:
+        #         btn.setChecked(False)  # Turn them off if ESTOP OFF
         
-        status = "ON" if state else "OFF"
-        print(f"ESTOP is {status}")
+        # status = "ON" if state else "OFF"
+        # print(f"ESTOP is {status}")
+        
+        # Simply send 0 to all websocket clients when ESTOP is clicked
+        print("[GUI DEBUG] ESTOP clicked, sending 0")
+        asyncio.create_task(self.broadcast(0))
 
 # Show window onto screen
 # if __name__ == "__main__":
@@ -120,3 +200,5 @@ class ToggleButtonsWindow(QWidget):
 #     window = ToggleButtonsWindow()
 #     window.show()
 #     sys.exit(app.exec())
+    
+
