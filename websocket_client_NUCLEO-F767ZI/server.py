@@ -1,6 +1,8 @@
 import asyncio
 import websockets
-clients = set()
+import gui
+import sys
+from qasync import QEventLoop
 
 ##############################################
 # from rsx.h:
@@ -21,14 +23,22 @@ clients = set()
 #define	OFF_24V_CMD (1U << 14)
 #define	OFF_55V_CMD (1U << 15)
 ###############################################
-
-async def handler(websocket):
-    clients.add(websocket)         
+clients = set()
+bms_mv = [0,0,0,0]
+async def handler(websocket, window):
+    clients.add(websocket)
     print("Connected!!!!")
     try:
+        # async for message in websocket:
+        #     pass
+        
         await websocket.send("FINALLY")
         async for message in websocket:
             print("TEST: ", message)
+            values = [int(x) for x in message.split(",") if x]
+            for i in range(min(4, len(values))):
+                bms_mv[i] = values[i]
+            print("BMS: ", bms_mv)
             await websocket.send("ACK: " + message)
     finally:
         clients.remove(websocket) 
@@ -38,16 +48,7 @@ async def stdin_sender():
 
     while True:
         msg = await loop.run_in_executor(None, input)
-        for ws in clients:
+        for ws in  clients:
             print("SENT CMD: ", msg)
             await ws.send(msg)
 
-async def main():
-    async with websockets.serve(handler, "0.0.0.0", 8080):
-        print("Server running on ws://192.168.0.10:8080")
-        await asyncio.gather(
-            stdin_sender(),
-            asyncio.Future(),   # run forever
-        ) 
-
-asyncio.run(main())

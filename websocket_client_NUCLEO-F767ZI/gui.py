@@ -4,6 +4,7 @@ import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout
 from PyQt6.QtCore import QSize, Qt
 import server
+import random
 
 clients = set()
 
@@ -32,10 +33,34 @@ class ToggleButtonsWindow(QWidget):
     # Creates horizontal and vertical layouts
     def initUI(self):
         # Layouts
-        main_layout = QVBoxLayout()
-        row_layout = QHBoxLayout()
-        
-        # Button names
+        main_layout = QHBoxLayout()   # Horizontal: ESTOP | Right Panel
+        left_layout = QVBoxLayout()   #left side estop
+               
+        # Create red circular estop button
+        self.estop_btn = QPushButton("ESTOP")
+        self.estop_btn.setCheckable(True)
+        self.estop_btn.setFixedSize(QSize(80, 80))
+        self.estop_btn.setStyleSheet(
+            "QPushButton {"
+            "border-radius: 60px;"
+            "background-color: red;"
+            "color: white;"
+            "font-size: 18px;"
+            "font-weight: bold;"
+            "}"
+            "QPushButton:checked {background-color: darkred;}"
+        )
+        self.estop_btn.clicked.connect(self.master_toggle)
+        left_layout.addWidget(self.estop_btn, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        left_layout.addStretch()
+        main_layout.addLayout(left_layout)
+
+
+        #right side
+        right_layout = QVBoxLayout()
+        #top toggle buttons
+        row_layout = QHBoxLayout()  
+  # Button names
         button_names = ["Motor", "Arm", "5V", "12V", "24V", "55V"]
         self.buttons = []
 
@@ -60,32 +85,82 @@ class ToggleButtonsWindow(QWidget):
             self.buttons.append(btn)
             row_layout.addWidget(btn)
         
-        main_layout.addLayout(row_layout)
+        right_layout.addLayout(row_layout)
         
-        # Create red circular estop button
-        self.estop_btn = QPushButton("ESTOP")
-        self.estop_btn.setCheckable(True)
-        self.estop_btn.setFixedSize(QSize(120, 120))
-        self.estop_btn.setStyleSheet(
-            "QPushButton {"
-            "border-radius: 60px;"
-            "background-color: red;"
-            "color: white;"
-            "font-size: 18px;"
-            "font-weight: bold;"
-            "}"
-            "QPushButton:checked {background-color: darkred;}"
-        )
-        self.estop_btn.clicked.connect(self.master_toggle)
-        main_layout.addWidget(self.estop_btn, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        #voltage, current and bms value rows
+        from PyQt6.QtWidgets import QLabel
         
-        self.setLayout(main_layout)
-    
+        volt_layout = QHBoxLayout()
+        title_label = QLabel("Voltages (V):  ")
+        title_label.setStyleSheet("font-weight: bold; font-size: 16pt;")
+        volt_layout.addWidget(title_label)        
+        self.volt_labels = []
+        for _ in range(4):
+            lbl = QLabel("--")
+            lbl.setFixedWidth(70)
+            self.volt_labels.append(lbl)
+            volt_layout.addWidget(lbl)
+
+        refresh_v_btn = QPushButton("Refresh")
+        refresh_v_btn.setFixedWidth(90)  
+        refresh_v_btn.clicked.connect(self.refresh_v)
+        volt_layout.addStretch()          # pushes button to right
+        volt_layout.addWidget(refresh_v_btn)
+
+        right_layout.addLayout(volt_layout)
+
+        # ---- Current Row ----
+        curr_layout = QHBoxLayout()
+        title_label = QLabel("Current (A):   ")
+        title_label.setStyleSheet("font-weight: bold; font-size: 16pt;")
+        curr_layout.addWidget(title_label)
+
+        self.curr_labels = []
+        for _ in range(3):
+            lbl = QLabel("--")
+            lbl.setFixedWidth(70)
+            self.curr_labels.append(lbl)
+            curr_layout.addWidget(lbl)
+
+        refresh_a_btn = QPushButton("Refresh")
+        refresh_a_btn.setFixedWidth(90)   # same width for all
+        refresh_a_btn.clicked.connect(self.refresh_a)
+        curr_layout.addStretch()          # pushes button to right
+        curr_layout.addWidget(refresh_a_btn)
+
+        right_layout.addLayout(curr_layout)
+
+        # ---- Battery Row ----
+        batt_layout = QHBoxLayout()
+        title_label = QLabel("Battery (V):   ")
+        title_label.setStyleSheet("font-weight: bold; font-size: 16pt;")
+
+        batt_layout.addWidget(title_label)
+
+        self.batt_labels = []
+        for _ in range(5):
+            lbl = QLabel("--")
+            lbl.setFixedWidth(100)
+            lbl.setStyleSheet("font-size: 16px; font-weight: bold;")
+            self.batt_labels.append(lbl)
+            batt_layout.addWidget(lbl)
+
+        refresh_b_btn = QPushButton("Refresh")
+        refresh_b_btn.setFixedWidth(90)   # same width for all
+        refresh_b_btn.clicked.connect(self.refresh_b)
+        batt_layout.addStretch()          # pushes button to right
+        batt_layout.addWidget(refresh_b_btn)
+
+        right_layout.addLayout(batt_layout)
+
+        right_layout.addStretch()
+        main_layout.addLayout(right_layout)
+
+        self.setLayout(main_layout)    
+        
     # Makes toggle mechanism for smaller buttons
     def button_toggled(self):
-        # Print states of small buttons
-        #states = {btn.text(): btn.isChecked() for btn in self.buttons}
-        #print("Button states:", states)
+
         
         btn = self.sender()  # the button that was clicked
         name = btn.text()
@@ -94,7 +169,7 @@ class ToggleButtonsWindow(QWidget):
             # Update flag
         self.button_flags[name] = checked
 
-            # Look up the correct bitmask command
+            # Look up the correct int command
         cmd = self.BUTTON_COMMANDS.get(name, {}).get(checked, 0)
 
         print(f"[GUI DEBUG] Button {name} = {checked}, sending {hex(cmd)}")
@@ -133,29 +208,7 @@ class ToggleButtonsWindow(QWidget):
 
     
     def update_flag(self, name, checked):
-        self.button_flags[name] = checked
-        #message = f"{name}:{int(checked)}"
-
-    # Determine message based on which button was pressed
-    
-    
-        # match name:
-        #     case "Motor":
-        #         message = f"MOTOR_STATE:{int(checked)}"
-        #     case "Arm":
-        #         message = f"ARM_STATE:{int(checked)}"
-        #     case "5V":
-        #         message = f"POWER_5V:{int(checked)}"
-        #     case "12V":
-        #         message = f"POWER_12V:{int(checked)}"
-        #     case "24V":
-        #         message = f"POWER_24V:{int(checked)}"
-        #     case "55V":
-        #         message = f"POWER_55V:{int(checked)}"
-        #     case _:
-        #         message = f"{name}:{int(checked)}"  # fallback
-
-        
+        self.button_flags[name] = checked 
         # Look up the corresponding command
         message = self.BUTTON_COMMANDS.get(name, {}).get(checked, 0)
 
@@ -180,25 +233,59 @@ class ToggleButtonsWindow(QWidget):
 
     # Makes toggle mechanism for estop
     def master_toggle(self):
-        # Enable/disable small buttons based on ESTOP state
-        # state = self.estop_btn.isChecked()
-        # for btn in self.buttons:
-        #     btn.setEnabled(state)   # Enable when BIG ESTOP ON, disable when OFF
-        #     if not state:
-        #         btn.setChecked(False)  # Turn them off if ESTOP OFF
-        
-        # status = "ON" if state else "OFF"
-        # print(f"ESTOP is {status}")
         
         # Simply send 0 to all websocket clients when ESTOP is clicked
         print("[GUI DEBUG] ESTOP clicked, sending 0")
         asyncio.create_task(self.broadcast(0))
+        
+    def refresh_v(self):
+        print("Refreshing voltages...")
+        values = [5.021, 11.965, 23.992, 54.935]  # Example data
+        for i in range(4):  # indices 0 to 3
+            values[i] += random.uniform(-0.06, 0.06)
+        
+        self.volt_labels[0].setText(f"5V: {values[0]:.2f}")
+        self.volt_labels[1].setText(f"12V: {values[1]:.2f}")   
+        self.volt_labels[2].setText(f"24V: {values[2]:.2f}") 
+        self.volt_labels[3].setText(f"55V: {values[3]:.2f}") 
+               
 
-# Show window onto screen
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-#     window = ToggleButtonsWindow()
-#     window.show()
-#     sys.exit(app.exec())
+    def refresh_a(self):
+        print("Refreshing current...")
+        values = [0.010, 0.00, 0.009]  # Example data
+        for i in range(3):  
+            values[i] += random.uniform(-0.006, 0.006)
+        
+        self.curr_labels[0].setText(f"5V: {values[0]:.2f}")
+        self.curr_labels[1].setText(f"12V: {values[1]:.2f}")   
+        self.curr_labels[2].setText(f"24V: {values[2]:.2f}") 
+        # TODO: send websocket request for current
+
+    def refresh_b(self):
+        print("Refreshing battery...")
+        values = [3.987, 4.015, 3.955, 4.002]  # Example data
+               # for SAR
+        for i in range(4):  # indices 0 to 3
+            values[i] += random.uniform(-0.06, 0.06)
+            
+        # self.batt_labels[0].setText(f"C1: {values[0]:.2f}")  
+        # self.batt_labels[1].setText(f"C2: {values[1]:.2f}")
+        # self.batt_labels[2].setText(f"C3: {values[2]:.2f}")
+        # self.batt_labels[3].setText(f"C4: {values[3]:.2f}")
+        
+        self.batt_labels[0].setText(f"C1: {server.bms_mv[0]/1000:.3f}")  
+        self.batt_labels[1].setText(f"C2: {server.bms_mv[1]/1000:.3f}")
+        self.batt_labels[2].setText(f"C3: {server.bms_mv[2]/1000:.3f}")
+        self.batt_labels[3].setText(f"C4: {server.bms_mv[3]/1000:.3f}")
+        
+        # total
+        self.batt_labels[4].setText(f"Total: {(server.bms_mv[0]+server.bms_mv[1]+server.bms_mv[2]+server.bms_mv[3])/1000:.3f}")
+       
+
+
+        
+        
+
+
     
 
