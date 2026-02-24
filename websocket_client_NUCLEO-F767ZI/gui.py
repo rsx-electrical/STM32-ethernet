@@ -138,7 +138,7 @@ class ToggleButtonsWindow(QWidget):
         batt_layout.addWidget(title_label)
 
         self.batt_labels = []
-        for _ in range(5):
+        for _ in range(6):
             lbl = QLabel("--")
             lbl.setFixedWidth(100)
             lbl.setStyleSheet("font-size: 16px; font-weight: bold;")
@@ -242,19 +242,19 @@ class ToggleButtonsWindow(QWidget):
         print("Refreshing voltages...")
         values = [5.021, 11.965, 23.992, 54.935]  # Example data
         for i in range(4):  # indices 0 to 3
-            values[i] += random.uniform(-0.06, 0.06)
+            values[i] += random.uniform(-0.01, 0.06)
         
-        self.volt_labels[0].setText(f"5V: {values[0]:.2f}")
-        self.volt_labels[1].setText(f"12V: {values[1]:.2f}")   
+        self.volt_labels[0].setText(f"5V: --")
+        self.volt_labels[1].setText(f"12V: --")   
         self.volt_labels[2].setText(f"24V: {values[2]:.2f}") 
-        self.volt_labels[3].setText(f"55V: {values[3]:.2f}") 
+        self.volt_labels[3].setText(f"55V: --") 
                
 
     def refresh_a(self):
         print("Refreshing current...")
-        values = [0.010, 0.00, 0.009]  # Example data
+        values = [0.000, 0.00, 0.000]  # Example data
         for i in range(3):  
-            values[i] += random.uniform(-0.006, 0.006)
+            values[i] += random.uniform(0, 0.005)
         
         self.curr_labels[0].setText(f"5V: {values[0]:.2f}")
         self.curr_labels[1].setText(f"12V: {values[1]:.2f}")   
@@ -263,6 +263,10 @@ class ToggleButtonsWindow(QWidget):
 
     def refresh_b(self):
         print("Refreshing battery...")
+        print(f"sending 2")
+
+            # Broadcast it
+        asyncio.create_task(self.broadcast(2))
         values = [3.987, 4.015, 3.955, 4.002]  # Example data
                # for SAR
         for i in range(4):  # indices 0 to 3
@@ -280,6 +284,7 @@ class ToggleButtonsWindow(QWidget):
         
         # total
         self.batt_labels[4].setText(f"Total: {(server.bms_mv[0]+server.bms_mv[1]+server.bms_mv[2]+server.bms_mv[3])/1000:.3f}")
+        self.batt_labels[5].setText(f"SOC (%): 84") #hard coded for now
        
 
 
