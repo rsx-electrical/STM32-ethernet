@@ -27,7 +27,7 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  TaskHandle_t  bmsTaskHandle;
  DMA_HandleTypeDef hdma_spi1_tx;
  DMA_HandleTypeDef hdma_spi1_rx;
- uint16_t voltage_mv[NUMCELLS];
+ extern uint16_t voltage_mv[NUMCELLS];
 
 void measure_batt_bms(uint16_t* mv, int print){
   adcv();
@@ -51,6 +51,8 @@ void measure_batt_bms(uint16_t* mv, int print){
         tmp = tmp + (float)(cell_voltage_100uV[i]) / 10000;
     }
     TRACE_INFO("V\r\n");
+    TRACE_INFO("Total voltage: %3.3fV", tmp);
+
   }
 }
 

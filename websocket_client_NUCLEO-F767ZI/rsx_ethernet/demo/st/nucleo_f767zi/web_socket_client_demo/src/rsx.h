@@ -98,6 +98,7 @@ void rsx_test(void);
 void shutoff_sequence(void);
 int parse_int(char_t *received_cmd, int *out);
 void rsxTask(void *param);
+void RSX_GPIO_Init(void);
 
 extern TaskHandle_t  rsx_task_handle;
 
