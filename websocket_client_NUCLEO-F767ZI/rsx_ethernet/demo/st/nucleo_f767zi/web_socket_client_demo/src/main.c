@@ -44,6 +44,7 @@
 #include "stm32f7xx_nucleo_144.h"
 #include "web_socket/web_socket.h"
 #include "BMSlib.h"
+#include "ads1015_temp.h"
 
 // Ethernet interface configuration
 #define APP_IF_NAME "eth0"
@@ -879,8 +880,11 @@ int_t main(void) {
     TRACE_ERROR("Failed to create task!\r\n");
   }
 
-  // Start the execution of tasks
-  osStartKernel();
+  // Create temperature sensor task
+   ads1015TempTaskCreate();   // <--- ADD THIS LINE
+
+   // Start the execution of tasks
+   osStartKernel();
 
   // This function should never return
   return 0;

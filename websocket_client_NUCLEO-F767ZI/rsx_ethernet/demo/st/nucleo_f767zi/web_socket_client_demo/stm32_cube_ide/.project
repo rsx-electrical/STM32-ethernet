@@ -1922,6 +1922,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/src/PEC.h</locationURI>
 		</link>
 		<link>
+			<name>Demo_Headers/ads1015_temp.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src/ads1015_temp.h</locationURI>
+		</link>
+		<link>
 			<name>Demo_Headers/crypto_config.h</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/src/crypto_config.h</locationURI>
@@ -1965,6 +1970,11 @@
 			<name>Demo_Sources/PEC.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/src/PEC.c</locationURI>
+		</link>
+		<link>
+			<name>Demo_Sources/ads1015_temp.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/src/ads1015_temp.c</locationURI>
 		</link>
 		<link>
 			<name>Demo_Sources/debug.c</name>
