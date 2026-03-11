@@ -448,7 +448,6 @@ void userTask(void *param) {
   while (1) {
     // Wait for the user button to be pressed
     osWaitForEvent(&appEvent, INFINITE_DELAY);
-
     // Clear flag
     buttonEventFlag = FALSE;
 
@@ -881,7 +880,7 @@ int_t main(void) {
   }
 
   // Create temperature sensor task
-   ads1015TempTaskCreate();   // <--- ADD THIS LINE
+   //ads1015TempTaskCreate();   // <--- ADD THIS LINE
 
    // Start the execution of tasks
    osStartKernel();

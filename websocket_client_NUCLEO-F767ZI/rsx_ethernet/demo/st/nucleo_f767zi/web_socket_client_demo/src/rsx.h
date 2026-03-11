@@ -5,6 +5,7 @@
 
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_adc.h"
 #include "os_port.h"
 #include "BMSlib.h"
 
@@ -99,6 +100,7 @@ void shutoff_sequence(void);
 int parse_int(char_t *received_cmd, int *out);
 void rsxTask(void *param);
 void RSX_GPIO_Init(void);
+static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
 
 extern TaskHandle_t  rsx_task_handle;
 

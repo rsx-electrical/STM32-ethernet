@@ -126,41 +126,6 @@ void RSX_GPIO_Init(void) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
-  /* 3.5 set adc channels*/
-  ADC_ChannelConfTypeDef sConfig = {0};
-//ADC123_IN10
-  sConfig.Channel = ADC_CHANNEL_10;
-  sConfig.Rank = 2;
-  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-//ADC123_IN12
-  sConfig.Channel = ADC_CHANNEL_12;
-  sConfig.Rank = 3;
-  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-//ADC123_IN3
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = 4;
-  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
- //ADC123_IN13
-  sConfig.Channel = ADC_CHANNEL_13;
-  sConfig.Rank = 1;
-  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-
-  //ADC3_IN9
-  sConfig.Channel = ADC_CHANNEL_9;
-  sConfig.Rank = 1;
-  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
-  //ADC3_IN15
-  sConfig.Channel = ADC_CHANNEL_15;
-  sConfig.Rank = 2;
-  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
-  //ADC123_IN13
-  sConfig.Channel = ADC_CHANNEL_8;
-  sConfig.Rank = 3;
-  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
- //ADC3_IN14,
-  sConfig.Channel = ADC_CHANNEL_14;
-  sConfig.Rank = 4;
-  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
   /* 4. Set initial safe state (All OFF) */
   shutoff_sequence();
 
@@ -275,15 +240,16 @@ extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 
 // Ruth
-static uint16_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
-  //ADC_ChannelConfTypeDef sConfig = {0};
-  //sConfig.Channel = channel;
-  //sConfig.Rank = ADC_REGULAR_RANK_1;
-  //sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5; //TODO: this was erroring out, coco commented this out
+static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
+  ADC_ChannelConfTypeDef sConfig = {0};
+  sConfig.Channel = channel;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
 
-  //HAL_ADC_ConfigChannel(hadc, &sConfig);  // Use the passed-in ADC (hadc1 or hadc3)
-
+  HAL_ADC_ConfigChannel(hadc, &sConfig);  // Use the passed-in ADC (hadc1 or hadc3)
   HAL_ADC_Start(hadc);
+  HAL_Delay(500);
+
   HAL_ADC_PollForConversion(hadc, 10);
   uint32_t value = HAL_ADC_GetValue(hadc);
   HAL_ADC_Stop(hadc);
@@ -309,6 +275,8 @@ void measure_v(void) {
   TRACE_INFO("adc_12V: %lu\r\n", adc_12v);
   TRACE_INFO("adc_24V: %lu\r\n", adc_24v);
   TRACE_INFO("adc_55V: %lu\r\n", adc_55v);
+  TRACE_INFO("ref hadc1: %lu\r\n", adc_read(&hadc1, ADC_CHANNEL_VREFINT)); //ADC_CHANNEL_VREFINT should give 1.2V as internal reference
+  TRACE_INFO("ref hadc3: %lu\r\n", adc_read(&hadc3, ADC_CHANNEL_VREFINT)); //ADC_CHANNEL_VREFINT should give 1.2V as internal reference - hadc3 may not have access to VREFINT
   TRACE_INFO("adc_battV: %lu\r\n", adc_battv);
   //TRACE_INFO("adc: %.2f \r\n", adc_to_voltage(adc_12v));
   //TRACE_INFO("12V: %.2f V\r\n", v_12v);
