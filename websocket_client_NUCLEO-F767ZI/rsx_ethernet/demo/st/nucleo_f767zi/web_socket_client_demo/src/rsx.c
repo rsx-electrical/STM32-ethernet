@@ -1,13 +1,14 @@
 #include "rsx.h"
 
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
+
 #include "debug.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t voltage_mv[NUMCELLS];
-I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c1;
 /**
  * @brief Initializes all GPIO pins for the RSX system.
  * This must be called in main() BEFORE starting the RTOS kernel.
@@ -92,33 +93,40 @@ void RSX_GPIO_Init(void) {
   GPIO_InitStruct.Pin = MEASURE_BATT_A_PIN;
   HAL_GPIO_Init(MEASURE_BATT_A_PORT, &GPIO_InitStruct);
 
-  //enable adc clokc
+  // enable adc clokc
   __HAL_RCC_ADC1_CLK_ENABLE();
   __HAL_RCC_ADC3_CLK_ENABLE();
   // adc initialization
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  // hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 4;   // Number of channels
+  // hadc1.Init.NbrOfConversion = 4;  // Number of channels
 
   // adc initialization
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  // hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc3.Init.NbrOfConversion = 4;  // Number of channels
+  // hadc3.Init.NbrOfConversion = 4;  // Number of channels
   /* 3. Apply the config */
+
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.NbrOfConversion = 1;
+
+  hadc3.Init.ScanConvMode = DISABLE;
+  hadc3.Init.NbrOfConversion = 1;
+
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
@@ -126,39 +134,44 @@ void RSX_GPIO_Init(void) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
+  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
+    TRACE_ERROR("ADC1 calibration failed\r\n");
+  }
+
+  if (HAL_ADCEx_Calibration_Start(&hadc3) != HAL_OK) {
+    TRACE_ERROR("ADC3 calibration failed\r\n");
+  }
+
   /* 4. Set initial safe state (All OFF) */
   shutoff_sequence();
 
   // I2C1 Init for ADS1015
-    extern I2C_HandleTypeDef hi2c1;
-    __HAL_RCC_I2C1_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_I2C1_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
-    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9; // PB8=SCL, PB9=SDA
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;  // PB8=SCL, PB9=SDA
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    hi2c1.Instance = I2C1;
-    hi2c1.Init.Timing = 0x20404768; // 100kHz at 216MHz
-    hi2c1.Init.OwnAddress1 = 0;
-    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-    HAL_I2C_Init(&hi2c1);
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x20404768;  // 100kHz at 216MHz
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  HAL_I2C_Init(&hi2c1);
 }
 
 void Estop_toggle(void) {
-	 TRACE_INFO("Enable estop");
+  TRACE_INFO("Enable estop");
   HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_SET);
 }
 
-void arm_on(void) {
-  HAL_GPIO_WritePin(ARM_EN_PORT, ARM_EN_PIN, GPIO_PIN_SET);
-}
+void arm_on(void) { HAL_GPIO_WritePin(ARM_EN_PORT, ARM_EN_PIN, GPIO_PIN_SET); }
 
 void arm_off(void) {
   HAL_GPIO_WritePin(ARM_EN_PORT, ARM_EN_PIN, GPIO_PIN_RESET);
@@ -212,32 +225,17 @@ void bus_55v_off(void) {
   HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
 }
 
-void LED_G_on() {
-	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
-}
+void LED_G_on() { HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET); }
 
-void LED_G_off() {
-	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
-}
+void LED_G_off() { HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET); }
 
-void LED_B_on() {
-	HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_SET);
-}
+void LED_B_on() { HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_SET); }
 
-void LED_B_off() {
-	HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_RESET);
-}
+void LED_B_off() { HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_RESET); }
 
-void LED_R_on() {
-	HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_SET);
-}
+void LED_R_on() { HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_SET); }
 
-void LED_R_off() {
-	HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_RESET);
-}
-
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc3;
+void LED_R_off() { HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_RESET); }
 
 // Ruth
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
@@ -246,9 +244,9 @@ static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
 
-  HAL_ADC_ConfigChannel(hadc, &sConfig);  // Use the passed-in ADC (hadc1 or hadc3)
+  HAL_ADC_ConfigChannel(hadc,
+                        &sConfig);  // Use the passed-in ADC (hadc1 or hadc3)
   HAL_ADC_Start(hadc);
-  HAL_Delay(500);
 
   HAL_ADC_PollForConversion(hadc, 10);
   uint32_t value = HAL_ADC_GetValue(hadc);
@@ -260,11 +258,11 @@ static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
 static float adc_to_voltage(uint32_t adc) { return (adc * VREF) / ADC_MAX; }
 
 void measure_v(void) {
-  uint32_t adc_12v = adc_read(&hadc1, ADC_CHANNEL_12); //ADC123_IN12
-  uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10); //ADC123_IN10
-  uint32_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);  //ADC123_IN3
-  uint32_t adc_24v = adc_read(&hadc3, ADC_CHANNEL_14); //ADC3_IN14
-  uint32_t adc_55v = adc_read(&hadc3, ADC_CHANNEL_8);  //ADC3_IN8
+  uint32_t adc_12v = adc_read(&hadc1, ADC_CHANNEL_12);    // ADC123_IN12
+  uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
+  uint32_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);     // ADC123_IN3
+  uint32_t adc_24v = adc_read(&hadc3, ADC_CHANNEL_14);    // ADC3_IN14
+  uint32_t adc_55v = adc_read(&hadc3, ADC_CHANNEL_8);     // ADC3_IN8
 
   float v_12v = adc_to_voltage(adc_12v) * DIV_12V;
   float v_battv = adc_to_voltage(adc_battv) * DIV_17V;
@@ -275,15 +273,23 @@ void measure_v(void) {
   TRACE_INFO("adc_12V: %lu\r\n", adc_12v);
   TRACE_INFO("adc_24V: %lu\r\n", adc_24v);
   TRACE_INFO("adc_55V: %lu\r\n", adc_55v);
-  TRACE_INFO("ref hadc1: %lu\r\n", adc_read(&hadc1, ADC_CHANNEL_VREFINT)); //ADC_CHANNEL_VREFINT should give 1.2V as internal reference
-  TRACE_INFO("ref hadc3: %lu\r\n", adc_read(&hadc3, ADC_CHANNEL_VREFINT)); //ADC_CHANNEL_VREFINT should give 1.2V as internal reference - hadc3 may not have access to VREFINT
+  TRACE_INFO("ref hadc1: %lu\r\n",
+             adc_read(&hadc1,
+                      ADC_CHANNEL_VREFINT));  // ADC_CHANNEL_VREFINT should
+                                              // give 1.2V as internal reference
+  TRACE_INFO(
+      "ref hadc3: %lu\r\n",
+      adc_read(&hadc3,
+               ADC_CHANNEL_VREFINT));  // ADC_CHANNEL_VREFINT should give 1.2V
+                                       // as internal reference - hadc3 may not
+                                       // have access to VREFINT
   TRACE_INFO("adc_battV: %lu\r\n", adc_battv);
-  //TRACE_INFO("adc: %.2f \r\n", adc_to_voltage(adc_12v));
-  //TRACE_INFO("12V: %.2f V\r\n", v_12v);
-  //TRACE_INFO("BattV: %.2f V\r\n", v_battv);
-  //TRACE_INFO("19V: %.2f V\r\n", v_19v);
-  //TRACE_INFO("24V: %.2f V\r\n", v_24v);
-  //TRACE_INFO("55V: %.2f V\r\n", v_55v);
+  // TRACE_INFO("adc: %.2f \r\n", adc_to_voltage(adc_12v));
+  // TRACE_INFO("12V: %.2f V\r\n", v_12v);
+  // TRACE_INFO("BattV: %.2f V\r\n", v_battv);
+  // TRACE_INFO("19V: %.2f V\r\n", v_19v);
+  // TRACE_INFO("24V: %.2f V\r\n", v_24v);
+  // TRACE_INFO("55V: %.2f V\r\n", v_55v);
 }
 
 // Andrew
@@ -318,7 +324,7 @@ void measure_a(void) {
   float i_batt = adc_to_current(adc_batt, 0.0110f);  // placeholder sensitivity
 
   TRACE_INFO("Currents - Arm+Motor: %.1fA, Charger: %.1fA, Batt: %.1fA\r\n",
-               i_arm_motor, i_charger, i_batt);
+             i_arm_motor, i_charger, i_batt);
 }
 
 // Turn off buses, arm, and motor
@@ -423,64 +429,61 @@ void Estop_test(void) {
   shutoff_sequence();
 }
 
+int parse_int(char_t *received_cmd, int *out) {
+  char *end;
+  long val = strtol(received_cmd, &end, 10);
 
-int parse_int(char_t *received_cmd, int *out)
-{
-    char *end;
-    long val = strtol(received_cmd, &end, 10);
+  if (end == received_cmd) {
+    TRACE_INFO("parse_int end == received_cmd pointer");
+    return 1;  // no digits found
+  }
+  // allow trailing whitespace / CRLF
+  while (*end == ' ' || *end == '\r' || *end == '\n' || *end == '\t') end++;
+  if (*end != '\0') {
+    TRACE_INFO("parse_int failed *end != '\\0' ");
+    return 1;  // extra junk in buffer
+  }
+  if (val < INT_MIN || val > INT_MAX) {
+    TRACE_INFO("parse_int failed val < INT_MIN || val > INT_MAX ");
+    return 1;  // overflow for int
+  }
 
-    if (end == received_cmd)  {
-    	TRACE_INFO("parse_int end == received_cmd pointer");
-    	return 1;          // no digits found
-    }
-    // allow trailing whitespace / CRLF
-    while (*end == ' ' || *end == '\r' || *end == '\n' || *end == '\t') end++;
-    if (*end != '\0')   {
-    	TRACE_INFO("parse_int failed *end != '\\0' ");
-    	return 1;        // extra junk in buffer
-    }
-    if (val < INT_MIN || val > INT_MAX) {
-    	TRACE_INFO("parse_int failed val < INT_MIN || val > INT_MAX ");
-    	return 1;              // overflow for int
-    }
-
-    *out = (int)val;
-    //send the command to rsx_task
-    //TODO: enable multiple commands at once
-    xTaskNotify(rsx_task_handle, (1U << val) , eSetBits);
-    return 0;                  // success
+  *out = (int)val;
+  // send the command to rsx_task
+  // TODO: enable multiple commands at once
+  xTaskNotify(rsx_task_handle, (1U << val), eSetBits);
+  return 0;  // success
 }
 
-void rsxTask(void *param){
-	uint32_t rsx_task_received;
-	xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &rsx_task_received, portMAX_DELAY);
-	for (;;) {
+void rsxTask(void *param) {
+  uint32_t rsx_task_received;
+  for (;;) {
+    xTaskNotifyWait(0, 0xFFFFFFFFUL, &rsx_task_received, portMAX_DELAY);
+    // TRACE_INFO("rsx_task_received notify bits = 0x%lx\r\n",
+    // rsx_task_received);
+    ///*
+    if (rsx_task_received & ESTOP_CMD) Estop_toggle();
+    if (rsx_task_received & MEASURE_V_CMD) measure_v();
+    if (rsx_task_received & MEASURE_B_CMD) {
+      // xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
+      // xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+      measure_batt_bms(voltage_mv, 1);
+      measure_batt();
+    }
+    if (rsx_task_received & MEASURE_A_CMD) measure_a();
+    if (rsx_task_received & MOTOR_ON_CMD) motor_on();
+    if (rsx_task_received & MOTOR_OFF_CMD) motor_off();
+    if (rsx_task_received & ARM_ON_CMD) arm_on();
+    if (rsx_task_received & ARM_OFF_CMD) arm_off();
+    if (rsx_task_received & ON_5V_CMD) bus_5v_on();
+    if (rsx_task_received & OFF_5V_CMD) bus_5v_off();
+    if (rsx_task_received & ON_12V_CMD) bus_12v_on();
+    if (rsx_task_received & OFF_12V_CMD) bus_12v_off();
+    if (rsx_task_received & ON_24V_CMD) bus_24v_on();
+    if (rsx_task_received & OFF_24V_CMD) bus_24v_off();
+    if (rsx_task_received & ON_55V_CMD) bus_55v_on();
+    if (rsx_task_received & OFF_55V_CMD) bus_55v_off();
 
-        xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &rsx_task_received, portMAX_DELAY);
-        TRACE_INFO("rsx_task_received notify bits = 0x%lx\r\n", rsx_task_received);
-        ///*
-        if (rsx_task_received & ESTOP_CMD) 		Estop_toggle();
-        if (rsx_task_received & MEASURE_V_CMD) 	measure_v();
-        if (rsx_task_received & MEASURE_B_CMD){
-            //xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
-            //xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-        	measure_batt_bms(voltage_mv, 1);
-            measure_batt();
-        }
-        if (rsx_task_received & MEASURE_A_CMD) 	measure_a();
-        if (rsx_task_received & MOTOR_ON_CMD) 	motor_on();
-        if (rsx_task_received & MOTOR_OFF_CMD) 	motor_off();
-        if (rsx_task_received & ARM_ON_CMD) 	arm_on();
-        if (rsx_task_received & ARM_OFF_CMD) 	arm_off();
-        if (rsx_task_received & ON_5V_CMD) 		bus_5v_on();
-        if (rsx_task_received & OFF_5V_CMD) 	bus_5v_off();
-        if (rsx_task_received & ON_12V_CMD) 	bus_12v_on();
-        if (rsx_task_received & OFF_12V_CMD) 	bus_12v_off();
-        if (rsx_task_received & ON_24V_CMD) 	bus_24v_on();
-        if (rsx_task_received & OFF_24V_CMD) 	bus_24v_off();
-        if (rsx_task_received & ON_55V_CMD) 	bus_55v_on();
-        if (rsx_task_received & OFF_55V_CMD) 	bus_55v_off();
-
-		vTaskDelay(pdMS_TO_TICKS(500));
-	}
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
 }
