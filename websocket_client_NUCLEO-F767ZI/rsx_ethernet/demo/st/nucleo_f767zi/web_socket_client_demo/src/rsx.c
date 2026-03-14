@@ -9,6 +9,8 @@
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t voltage_mv[NUMCELLS];
+float vref_val = 3.3f;
+
 extern I2C_HandleTypeDef hi2c1;
 /**
  * @brief Initializes all GPIO pins for the RSX system.
@@ -135,6 +137,8 @@ void RSX_GPIO_Init(void) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
+  ADC->CCR |= ADC_CCR_VREFEN;
+
   // if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
   //   TRACE_ERROR("ADC1 calibration failed\r\n");
   // }
@@ -238,6 +242,28 @@ void LED_R_on() { HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_SET); }
 
 void LED_R_off() { HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_RESET); }
 
+void calibrate_adc(void) {
+  TRACE_INFO("Starting ADC Calibration using VREFINT...\r\n");
+
+  // Read the internal 1.2V reference on hadc1
+  uint32_t vref_raw = adc_read(&hadc1, ADC_CHANNEL_VREFINT);
+
+  if (vref_raw == 0) {
+    TRACE_ERROR("Calibration failed: VREFINT read 0.\r\n");
+    return;
+  }
+
+  // THE MATH:
+  // In a perfect 12-bit ADC, Raw = (Input_Voltage / VDDA) * 4095
+  // Therefore: VDDA = (Input_Voltage * 4095) / Raw
+  // We know Input_Voltage is exactly 1.2V (VINTREF)
+  
+  vref_val = (1.2f * 4095.0f) / (float)vref_raw;
+
+  TRACE_INFO("Raw VREFINT: %lu\r\n", vref_raw);
+  TRACE_INFO("Calibrated VDDA is now: %.2f V\r\n", vref_val);
+}
+
 // Ruth
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
   ADC_ChannelConfTypeDef sConfig = {0};
@@ -256,9 +282,10 @@ static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
   return value;
 }
 
-static float adc_to_voltage(uint32_t adc) { return (adc * VREF) / ADC_MAX; }
+static float adc_to_voltage(uint32_t adc) { return (adc * vref_val) / ADC_MAX; }
 
 void measure_v(void) {
+  calibrate_adc();
   uint32_t adc_12v = adc_read(&hadc1, ADC_CHANNEL_12);    // ADC123_IN12
   uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
   uint32_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);     // ADC123_IN3
