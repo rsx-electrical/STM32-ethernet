@@ -137,8 +137,6 @@ void RSX_GPIO_Init(void) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
-  ADC->CCR |= ADC_CCR_VREFEN;
-
   // if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
   //   TRACE_ERROR("ADC1 calibration failed\r\n");
   // }
