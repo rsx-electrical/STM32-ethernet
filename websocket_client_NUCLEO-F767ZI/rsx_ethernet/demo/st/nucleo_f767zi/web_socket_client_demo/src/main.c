@@ -88,6 +88,7 @@ HmacDrbgContext hmacDrbgContext;
 uint8_t seed[48];
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
+I2C_HandleTypeDef hi2c1;
 TaskHandle_t  rsx_task_handle;
 uint16_t voltage_mv[NUMCELLS];
 

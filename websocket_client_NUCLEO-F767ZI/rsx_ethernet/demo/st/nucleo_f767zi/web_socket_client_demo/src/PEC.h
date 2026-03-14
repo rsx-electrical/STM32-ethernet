@@ -1,6 +1,6 @@
 #ifndef PEC_HEADER
 #define PEC_HEADER
-
+#include <stdint.h>
 //#ifdef __cplusplus //for c->arduino translation
 //extern "C" {
 //#endif

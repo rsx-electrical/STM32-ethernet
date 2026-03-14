@@ -2,6 +2,7 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "debug.h"
 
@@ -134,13 +135,13 @@ void RSX_GPIO_Init(void) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
-  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
-    TRACE_ERROR("ADC1 calibration failed\r\n");
-  }
+  // if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
+  //   TRACE_ERROR("ADC1 calibration failed\r\n");
+  // }
 
-  if (HAL_ADCEx_Calibration_Start(&hadc3) != HAL_OK) {
-    TRACE_ERROR("ADC3 calibration failed\r\n");
-  }
+  // if (HAL_ADCEx_Calibration_Start(&hadc3) != HAL_OK) {
+  //   TRACE_ERROR("ADC3 calibration failed\r\n");
+  // }
 
   /* 4. Set initial safe state (All OFF) */
   shutoff_sequence();
@@ -295,14 +296,10 @@ void measure_v(void) {
 // Andrew
 void measure_batt(void) {
   // ADC Measure
-  int raw_val = adc_read(&hadc1, ADC_CHANNEL_10);
+  uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
+  float v_battv = adc_to_voltage(adc_battv) * DIV_17V;
 
-  float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
-  float batt_voltage = pin_voltage * 16.67f;  // placeholder factor
-  TRACE_INFO("%lf", batt_voltage);
   // BMS Measure (todo)
-
-  TRACE_INFO("Batt: %.2f V\r\n", batt_voltage);
 }
 
 static float adc_to_current(uint16_t adc, float sensitivity) {

@@ -8,6 +8,7 @@
 #include "stm32f7xx_hal_adc.h"
 #include "os_port.h"
 #include "BMSlib.h"
+#include <stdint.h>
 
 // not really using Measurements rn
 typedef struct {
