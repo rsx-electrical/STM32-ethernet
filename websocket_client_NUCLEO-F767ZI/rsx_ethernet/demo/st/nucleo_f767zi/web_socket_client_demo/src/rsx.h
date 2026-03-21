@@ -9,6 +9,7 @@
 #include "os_port.h"
 #include "BMSlib.h"
 #include <stdint.h>
+#include "web_socket/web_socket.h"
 
 // not really using Measurements rn
 typedef struct {
@@ -100,10 +101,12 @@ void rsx_test(void);
 void shutoff_sequence(void);
 int parse_int(char_t *received_cmd, int *out);
 void rsxTask(void *param);
+void bmsUVProtectionTask(void *param);
 void RSX_GPIO_Init(void);
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
 
 extern TaskHandle_t  rsx_task_handle;
+extern WebSocket *webSocket;
 
 #define ESTOP_CMD	(1U << 0)
 #define MEASURE_V_CMD (1U << 1)
@@ -122,5 +125,6 @@ extern TaskHandle_t  rsx_task_handle;
 #define	OFF_24V_CMD (1U << 14)
 #define	OFF_55V_CMD (1U << 15)
 
-
+// for sending to ethernet task
+extern bool_t uvEventFlag;
 #endif

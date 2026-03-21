@@ -79,6 +79,7 @@
 // Global variables
 OsEvent appEvent;
 bool_t buttonEventFlag;
+bool_t uvEventFlag;
 
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
@@ -90,7 +91,10 @@ ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 I2C_HandleTypeDef hi2c1;
 TaskHandle_t  rsx_task_handle;
+TaskHandle_t  bmsUVProtectionHandle;
+TaskHandle_t  ethernetHandle;
 uint16_t batt_voltage_mv[NUMCELLS];
+WebSocket *webSocket;
 
 /**
  * @brief System clock configuration
@@ -229,7 +233,6 @@ error_t webSocketClientTest(void) {
   size_t length;
   systime_t timestamp;
   systime_t currentTime;
-  WebSocket *webSocket;
   WebSocketFrameType type;
   IpAddr serverIpAddr;
   SocketEventDesc eventDesc[1];
@@ -388,6 +391,22 @@ error_t webSocketClientTest(void) {
 
          // Save current time
          timestamp = osGetSystemTime();
+       }
+
+       if (uvEventFlag){
+           // Clear flag
+    	   uvEventFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%4d,%4d,%4d,%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3]);
+    	   TRACE_INFO("sending  %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
        }
 
       // Get current time
@@ -802,10 +821,10 @@ int_t main(void) {
   taskParams.stackSize = 500;
   taskParams.priority = OS_TASK_PRIORITY_NORMAL;
 
-  // Create user task
-  taskId = osCreateTask("User", userTask, NULL, &taskParams);
+  // Create ethernet task
+  ethernetHandle = osCreateTask("User", userTask, NULL, &taskParams);
   // Failed to create the task?
-  if (taskId == OS_INVALID_TASK_ID) {
+  if (ethernetHandle == NULL) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
@@ -855,6 +874,11 @@ int_t main(void) {
     TRACE_ERROR("Failed to create task!\r\n");
   }
 
+  bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
+  if (bmsUVProtectionHandle == NULL) {
+    // Debug message
+    TRACE_ERROR("Failed to create task!\r\n");
+  }
   // Create temperature sensor task
    //ads1015TempTaskCreate();   // <--- ADD THIS LINE
 

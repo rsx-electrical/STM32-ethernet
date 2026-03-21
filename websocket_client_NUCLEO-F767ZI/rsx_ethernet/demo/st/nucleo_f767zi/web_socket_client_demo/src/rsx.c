@@ -510,26 +510,20 @@ void rsxTask(void *param) {
 
 void bmsUVProtectionTask(void *param) {
 	uint16_t total_v;
+	error_t error;
 	int length;
 	char buffer[100];
     for (;;){
         measure_batt_bms(batt_voltage_mv, 1);
-        uint16_t total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
+        total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
        	length = sprintf(buffer, "%4d,%4d,%4d,%4d; total=%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3], total_v );
        	TRACE_INFO("sending  %s\r\n", buffer);
        	if (total_v < 12000 && total_v != 0 ) {
        		TRACE_INFO("UV! UV! UV!\r\n");
        		Estop_toggle();
+       		uvEventFlag=1;
        	}
 
-       // Send battery data to the WebSocket server
-       	error = webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT, NULL);
-
-       // Any error to report?
-       	if (error) {
-       		TRACE_INFO("oops broke sender ethernet");
-       		break;
-       	}
        	vTaskDelay(pdMS_TO_TICKS(500));
 
    	}

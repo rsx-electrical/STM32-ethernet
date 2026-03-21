@@ -8,6 +8,7 @@
 #include "stm32f7xx.h"
 #include "debug.h"
 #include "stm32f7xx_nucleo_144.h"
+#include "error.h"
 
 
 
