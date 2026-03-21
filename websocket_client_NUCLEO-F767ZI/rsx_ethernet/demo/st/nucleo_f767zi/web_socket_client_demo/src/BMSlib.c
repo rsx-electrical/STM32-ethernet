@@ -27,7 +27,7 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  TaskHandle_t  bmsTaskHandle;
  DMA_HandleTypeDef hdma_spi1_tx;
  DMA_HandleTypeDef hdma_spi1_rx;
- extern uint16_t voltage_mv[NUMCELLS];
+ extern uint16_t batt_voltage_mv[NUMCELLS];
 
 void measure_batt_bms(uint16_t* mv, int print){
   adcv();
@@ -173,7 +173,7 @@ void rsxSpiSendTask(void *arg){
         xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &spi_task_received, portMAX_DELAY);
         //TRACE_INFO("RSX: SPI send loop\n");
         if (spi_task_received & SPI_CMD_ADCV) {
-        	measure_batt_bms(voltage_mv, 1);
+        	measure_batt_bms(batt_voltage_mv, 1);
         }
         xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
     }

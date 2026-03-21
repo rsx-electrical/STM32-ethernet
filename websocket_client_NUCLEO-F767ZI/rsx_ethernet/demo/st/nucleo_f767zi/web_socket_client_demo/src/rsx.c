@@ -8,7 +8,7 @@
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
-extern uint16_t voltage_mv[NUMCELLS];
+extern uint16_t batt_voltage_mv[NUMCELLS];
 float vref_val = 3.3f;
 
 extern I2C_HandleTypeDef hi2c1;
@@ -487,9 +487,7 @@ void rsxTask(void *param) {
     if (rsx_task_received & ESTOP_CMD) Estop_toggle();
     if (rsx_task_received & MEASURE_V_CMD) measure_v();
     if (rsx_task_received & MEASURE_B_CMD) {
-      // xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
-      // xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-      measure_batt_bms(voltage_mv, 1);
+      measure_batt_bms(batt_voltage_mv, 1);
       measure_batt();
     }
     if (rsx_task_received & MEASURE_A_CMD) measure_a();
@@ -509,3 +507,33 @@ void rsxTask(void *param) {
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
+
+void bmsUVProtectionTask(void *param) {
+	uint16_t total_v;
+	int length;
+	char buffer[100];
+    for (;;){
+        measure_batt_bms(batt_voltage_mv, 1);
+        uint16_t total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
+       	length = sprintf(buffer, "%4d,%4d,%4d,%4d; total=%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3], total_v );
+       	TRACE_INFO("sending  %s\r\n", buffer);
+       	if (total_v < 12000 && total_v != 0 ) {
+       		TRACE_INFO("UV! UV! UV!\r\n");
+       		Estop_toggle();
+       	}
+
+       // Send battery data to the WebSocket server
+       	error = webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT, NULL);
+
+       // Any error to report?
+       	if (error) {
+       		TRACE_INFO("oops broke sender ethernet");
+       		break;
+       	}
+       	vTaskDelay(pdMS_TO_TICKS(500));
+
+   	}
+
+}
+
+

@@ -90,7 +90,7 @@ ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 I2C_HandleTypeDef hi2c1;
 TaskHandle_t  rsx_task_handle;
-uint16_t voltage_mv[NUMCELLS];
+uint16_t batt_voltage_mv[NUMCELLS];
 
 /**
  * @brief System clock configuration
@@ -294,32 +294,7 @@ error_t webSocketClientTest(void) {
     TRACE_INFO("WebSocket: Sending message (%" PRIuSIZE " bytes)...\r\n",
                length);
     TRACE_INFO("  %s\r\n", buffer);
- //coco
-    /*
-    for (;;){
-    	//coco
-    	length = sprintf(buffer, "%4d,%4d,%4d,%4d", voltage_mv[0], voltage_mv[1], voltage_mv[2], voltage_mv[3] );
-    	TRACE_INFO("sending  %s\r\n", buffer);
-    	if (voltage_mv[0]+voltage_mv[1]+voltage_mv[2]+voltage_mv[3] < 12000 && voltage_mv[0]+voltage_mv[1]+voltage_mv[2]+voltage_mv[3] != 0 ) {
-    		//Estop_toggle();//12V UV
-    		TRACE_INFO("UV! UV! UV!\r\n");
-    		Estop_toggle();
-    	}
 
-
-
-    // Send data to the WebSocket server
-    	error = webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT, NULL);
-
-    // Any error to report?
-    	if (error) {
-    		TRACE_INFO("oops broke sender ethernet");
-    		break;
-    	}
-    	vTaskDelay(pdMS_TO_TICKS(500));
-
-	}
-	*/
     // Save current time
     timestamp = osGetSystemTime();
 
@@ -394,7 +369,7 @@ error_t webSocketClientTest(void) {
 
          // Format event message
          length = sprintf(buffer, "User button pressed!");
-		length = sprintf(buffer, "%4d,%4d,%4d,%4d", voltage_mv[0], voltage_mv[1], voltage_mv[2], voltage_mv[3] );
+		length = sprintf(buffer, "%4d,%4d,%4d,%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3] );
 		TRACE_INFO("sending  %s\r\n", buffer);
 
 
