@@ -14,7 +14,7 @@ https://www.st.com/en/development-tools/stm32cubeide.html
 Alternatively, use Github Desktop to clone  
 
 3. **Open the project in STM32CubeIDE**
-- Open your file explorer and navigate to: my_cloned_folder\rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide  
+- Open your file explorer and navigate to: `my_cloned_folder\rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide`
   (I am so sorry for the long path, but a lot of stuff are relative to
   eachother and it's a pain to change it)
 - Click on the .cproject file to open your project in STM32CubeIDE
