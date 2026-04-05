@@ -19,7 +19,7 @@ Alternatively, use Github Desktop to clone
 - Should look like this in your IDE's Project Explorer:
 
 <div align="center">
-<img src="../img/ProjectInIDE.png" width="400">
+<img src="img/ProjectInIDE.png" width="400">
 </div>
 
 <br>
