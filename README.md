@@ -20,13 +20,13 @@ Alternatively, use Github Desktop to clone
 - Click on the .cproject file to open your project in STM32CubeIDE
   
 <div align="center">
-<img src="img/cproject.png" width="600">
+<img src="doc/img/cproject.png" width="600">
 </div>
 
 - Should look like this in your IDE's Project Explorer:
 
 <div align="center">
-<img src="img/ProjectInIDE.png" width="400">
+<img src="doc/img/ProjectInIDE.png" width="400">
 </div>
 
 <br>
