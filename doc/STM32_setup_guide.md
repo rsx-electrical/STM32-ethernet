@@ -1,52 +1,32 @@
-# WebSocket Client for NUCLEO-F767ZI
-This project implements a WebSocket client on the TM32 NUCLEO-F767ZIboard using the CycloneTCP library.
-
-<br>
-
-## Overview
-Websocket is TCP-based, bidirectional communication protocol over Ethernet between the STM32 and a PC host.  
-The implementation is based on example code from **Oryx Embedded**:
-
-https://www.oryx-embedded.com/products/CycloneTCP
-
-Once running, the STM32 connects to a WebSocket server and can both send and receive messages in real time.
-
-<br>
-
-## Features
-- **Target MCU:** STM32F767ZI (NUCLEO-F767ZI board)  
-- **Network Stack:** CycloneTCP v2.5.4  
-- **RTOS:** FreeRTOS  
-- **Interface:** 10/100 Mbps Ethernet via onboard LAN8742 PHY  
-- **Demo Behavior:**
-  - Initializes Ethernet and TCP/IP stack on startup.  
-  - On USER button press, opens a WebSocket connection to the PC.  
-  - Sends “Hello World!” to the server.  
-  - Receives and prints messages from the server.  
-
-<br>
-
 ## Project Setup
 1. **Download and install STM32CubeIDE**  
 https://www.st.com/en/development-tools/stm32cubeide.html
 
 <br>
 
-3. **Clone this repository - may need to use git bash**
+2. **Clone this repository - may need to use git bash**  
+   Replace my_cloned_folder with any directory of your choice
   ```bash
-  git clone https://github.com/rsx-electrical/STM32-ethernet.git
+  git clone https://github.com/rsx-electrical/STM32-ethernet.git my_cloned_folder
   ```
 
 <br>
 Alternatively, use Github Desktop to clone  
 
 3. **Open the project in STM32CubeIDE**
-- Open your file explorer and navigate to: rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide
+- Open your file explorer and navigate to: `my_cloned_folder\rsx_ethernet\demo\st\nucleo_f767zi\web_socket_client_demo\stm32_cube_ide`
+  (I am so sorry for the long path, but a lot of stuff are relative to
+  eachother and it's a pain to change it)
 - Click on the .cproject file to open your project in STM32CubeIDE
+  
+<div align="center">
+<img src="img/cproject.png" width="600">
+</div>
+
 - Should look like this in your IDE's Project Explorer:
 
 <div align="center">
-<img src="../img/ProjectInIDE.png" width="400">
+<img src="img/ProjectInIDE.png" width="400">
 </div>
 
 <br>
