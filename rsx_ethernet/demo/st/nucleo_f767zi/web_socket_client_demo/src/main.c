@@ -80,6 +80,7 @@
 OsEvent appEvent;
 bool_t buttonEventFlag;
 bool_t uvEventFlag;
+bool_t measureVFlag;
 
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
@@ -94,6 +95,8 @@ TaskHandle_t  rsx_task_handle;
 TaskHandle_t  bmsUVProtectionHandle;
 TaskHandle_t  ethernetHandle;
 uint16_t batt_voltage_mv[NUMCELLS];
+measure_t adc_measure;
+
 WebSocket *webSocket;
 
 /**
@@ -373,7 +376,7 @@ error_t webSocketClientTest(void) {
          // Format event message
          length = sprintf(buffer, "User button pressed!");
 		length = sprintf(buffer, "%4d,%4d,%4d,%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3] );
-		TRACE_INFO("sending  %s\r\n", buffer);
+		TRACE_INFO("buttonEventFlag set, sending  %s\r\n", buffer);
 
 
 
@@ -408,7 +411,21 @@ error_t webSocketClientTest(void) {
            // Save current time
            timestamp = osGetSystemTime();
        }
-
+       if (measureVFlag){
+           // Clear flag
+    	   measureVFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%4d,%4d,%4d,%4d", adc_measure.mv_12v, adc_measure.mv_24v, adc_measure.mv_55v, adc_measure.mv_batt_adc);
+    	   TRACE_INFO("measureVFlag set, sending voltages: %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
+       }
       // Get current time
       currentTime = osGetSystemTime();
 
@@ -585,7 +602,6 @@ void rsxButtonTask(void *param) {
 
         //default:
 
-//          measure_v();
 //          button_value = STATE_IDLE;
           //break;
       //}

@@ -11,12 +11,11 @@
 #include <stdint.h>
 #include "web_socket/web_socket.h"
 
-// not really using Measurements rn
 typedef struct {
-  float v_5v, v_12v, v_19v, v_24v, v_55v;
-  float v_batt_adc, v_batt_bms;
+  uint16_t mv_5v, mv_12v, mv_19v, mv_24v, mv_55v;
+  uint16_t mv_batt_adc, mv_batt_bms;
   float i_arm_motor, i_charger, i_batt;
-} Measurements;
+} measure_t;
 
 // Define the pins based on the diagram provided
 #define MOTOR_EN_PORT GPIOD
@@ -81,7 +80,7 @@ typedef struct {
 void motor_on(void);
 void motor_off(void);
 void Estop_toggle(void);
-void measure_v(void);
+void measure_v(measure_t* arr);
 void measure_batt(void);  // Combines BMS and ADC readings
 void measure_a(void);
 void arm_on(void);
@@ -125,6 +124,13 @@ extern WebSocket *webSocket;
 #define	OFF_24V_CMD (1U << 14)
 #define	OFF_55V_CMD (1U << 15)
 
+// 12V 24V 55V and battery V
+#define NUM_VOLTAGES 4
+
+
+
 // for sending to ethernet task
 extern bool_t uvEventFlag;
+extern bool_t measureVFlag;
+
 #endif
