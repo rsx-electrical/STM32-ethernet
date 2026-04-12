@@ -301,10 +301,10 @@ void measure_v(measure_t* arr) {
 }
 
 // Andrew
-void measure_batt(void) {
+void measure_batt(measure_t* arr) {
   // ADC Measure
   uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
-  adc_measure.mv_batt_adc = adc_to_voltage_mv(adc_battv) * DIV_17V;
+  arr->mv_batt_adc = adc_to_voltage_mv(adc_battv) * DIV_17V;
 
   // BMS Measure (todo)
 }
@@ -316,19 +316,17 @@ static float adc_to_current(uint16_t adc, float sensitivity) {
 }
 
 // Tanmay
-void measure_a(void) {
+void measure_a(measure_t* arr) {
   uint16_t adc_arm_motor = adc_read(&hadc1, ADC_CHANNEL_13);
   uint16_t adc_charger = adc_read(&hadc3, ADC_CHANNEL_9);
   uint16_t adc_batt = adc_read(&hadc3, ADC_CHANNEL_15);
 
-  float i_arm_motor =
-      adc_to_current(adc_arm_motor, 0.0133f);  // placeholder sensitivity
-  float i_charger =
-      adc_to_current(adc_charger, 0.0660f);          // placeholder sensitivity
-  float i_batt = adc_to_current(adc_batt, 0.0110f);  // placeholder sensitivity
+  arr->a_arm_motor = adc_to_current(adc_arm_motor, 0.0133f);  // placeholder sensitivity
+  arr->a_charger = adc_to_current(adc_charger, 0.0660f);          // placeholder sensitivity
+  arr->a_batt = adc_to_current(adc_batt, 0.0110f);  // placeholder sensitivity
 
   TRACE_INFO("Currents - Arm+Motor: %.1fA, Charger: %.1fA, Batt: %.1fA\r\n",
-             i_arm_motor, i_charger, i_batt);
+		  arr->a_arm_motor, arr->a_charger, arr->a_batt);
 }
 
 // Turn off buses, arm, and motor
@@ -336,12 +334,12 @@ void shutoff_sequence(void) {
   // Turn off motor and arm
   motor_off();
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);
   arm_off();
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);
 
   // Turn off buses
   bus_55v_off();
@@ -357,14 +355,14 @@ void shutoff_sequence(void) {
   bus_12v_off();
   HAL_Delay(100);
   measure_v(&adc_measure);
-  measure_a();
-  measure_batt();  // if 5V bus powers sensor measure first
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);  // if 5V bus powers sensor measure first
   bus_5v_off();
   HAL_Delay(100);
   measure_v(&adc_measure);  // measure after to see if it shows value (depends if 5V powers
                 // sensors)
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);
 }
 
 void power_sequence(void) {
@@ -386,14 +384,14 @@ void power_sequence(void) {
   // Turn on arm
   arm_on();  // doesn't work
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);
 
   // Turn on motor
   motor_on();
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);
 }
 
 void rsx_test(void) {
@@ -427,8 +425,8 @@ void Estop_test(void) {
   Estop_toggle();
   HAL_Delay(500);
   measure_v(&adc_measure);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure);
   // Turn off all pins in case
   shutoff_sequence();
 }
@@ -473,9 +471,12 @@ void rsxTask(void *param) {
     }
     if (rsx_task_received & MEASURE_B_CMD) {
       measure_batt_bms(batt_voltage_mv, 1);
-      measure_batt();
+      measure_batt(&adc_measure);
     }
-    if (rsx_task_received & MEASURE_A_CMD) measure_a();
+    if (rsx_task_received & MEASURE_A_CMD) {
+    	measure_a(&adc_measure);
+    	measureIFlag = 1;
+    }
     if (rsx_task_received & MOTOR_ON_CMD) motor_on();
     if (rsx_task_received & MOTOR_OFF_CMD) motor_off();
     if (rsx_task_received & ARM_ON_CMD) arm_on();

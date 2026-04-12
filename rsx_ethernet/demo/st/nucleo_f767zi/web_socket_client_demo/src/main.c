@@ -81,6 +81,7 @@ OsEvent appEvent;
 bool_t buttonEventFlag;
 bool_t uvEventFlag;
 bool_t measureVFlag;
+bool_t measureIFlag;
 
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
@@ -417,6 +418,21 @@ error_t webSocketClientTest(void) {
            // Format event message
     	   length = sprintf(buffer, "%4d,%4d,%4d,%4d", adc_measure.mv_12v, adc_measure.mv_24v, adc_measure.mv_55v, adc_measure.mv_batt_adc);
     	   TRACE_INFO("measureVFlag set, sending voltages: %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
+       }
+       if (measureIFlag){
+           // Clear flag
+    	   measureIFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%.2f,%.2f,%.2f", adc_measure.a_arm_motor, adc_measure.a_charger, adc_measure.a_batt);
+    	   TRACE_INFO("measureIFlag set, sending currents: %s\r\n", buffer);
            // Send a message to the WebSocket server
            error =
                webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,

@@ -14,7 +14,8 @@
 typedef struct {
   uint16_t mv_5v, mv_12v, mv_19v, mv_24v, mv_55v;
   uint16_t mv_batt_adc, mv_batt_bms;
-  float i_arm_motor, i_charger, i_batt;
+  // current in amps
+  float a_arm_motor, a_charger, a_batt;
 } measure_t;
 
 // Define the pins based on the diagram provided
@@ -81,8 +82,8 @@ void motor_on(void);
 void motor_off(void);
 void Estop_toggle(void);
 void measure_v(measure_t* arr);
-void measure_batt(void);  // Combines BMS and ADC readings
-void measure_a(void);
+void measure_batt(measure_t* arr);  // Combines BMS and ADC readings
+void measure_a(measure_t* arr);
 void arm_on(void);
 void arm_off(void);
 void bus_5v_on(void);
@@ -132,5 +133,6 @@ extern WebSocket *webSocket;
 // for sending to ethernet task
 extern bool_t uvEventFlag;
 extern bool_t measureVFlag;
+extern bool_t measureIFlag;
 
 #endif
