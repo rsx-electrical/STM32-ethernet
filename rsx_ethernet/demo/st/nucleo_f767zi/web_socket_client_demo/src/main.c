@@ -82,7 +82,7 @@ bool_t buttonEventFlag;
 bool_t uvEventFlag;
 bool_t measureVFlag;
 bool_t measureIFlag;
-
+bool_t measureBFlag;
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
 SlaacSettings slaacSettings;
@@ -418,6 +418,23 @@ error_t webSocketClientTest(void) {
            // Format event message
     	   length = sprintf(buffer, "%4d,%4d,%4d,%4d", adc_measure.mv_12v, adc_measure.mv_24v, adc_measure.mv_55v, adc_measure.mv_batt_adc);
     	   TRACE_INFO("measureVFlag set, sending voltages: %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
+       }
+       if (measureBFlag){
+           // Clear flag
+    	   measureBFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%4d,%4d,%4d,%4d,%4d,%4d",
+    			   batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3],
+				   adc_measure.mv_batt_adc, adc_measure.mv_batt_bms);
+    	   TRACE_INFO("measureBFlag set, sending battery voltages: %s\r\n", buffer);
            // Send a message to the WebSocket server
            error =
                webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,

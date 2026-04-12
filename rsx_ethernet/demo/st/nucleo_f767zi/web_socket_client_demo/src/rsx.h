@@ -82,7 +82,7 @@ void motor_on(void);
 void motor_off(void);
 void Estop_toggle(void);
 void measure_v(measure_t* arr);
-void measure_batt(measure_t* arr);  // Combines BMS and ADC readings
+void measure_batt(measure_t* adc_arr, uint16_t* mv_cells);  // Combines BMS and ADC readings
 void measure_a(measure_t* arr);
 void arm_on(void);
 void arm_off(void);
@@ -134,5 +134,6 @@ extern WebSocket *webSocket;
 extern bool_t uvEventFlag;
 extern bool_t measureVFlag;
 extern bool_t measureIFlag;
+extern bool_t measureBFlag;
 
 #endif

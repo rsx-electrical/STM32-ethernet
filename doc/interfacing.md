@@ -8,13 +8,20 @@ cmd = 1
 response = "%4d,%4d,%4d,%4d", adc_measure.mv_12v, adc_measure.mv_24v, adc_measure.mv_55v, adc_measure.mv_batt_adc  
 info = measures 12V, 24V, 55V and battery in mv  
 <br>
-name = MEASURE_V_CMD
+name = MEASURE_B_CMD
 cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
-
+response =     	   "%4d,%4d,%4d,%4d,%4d,%4d",
+    			   batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3],
+				   adc_measure.mv_batt_adc, adc_measure.mv_batt_bms
+info = batt_voltage_mv[x] are individual cell voltages, max 4200mV. <br>
+adc_measure.mv_batt_adc is total battery voltage measured by an ADC <br>
+adc_measure.mv_batt_bms is total battery voltage from the sum of batt_voltage_mv[x]  
+<br>
+name = MEASURE_A_CMD
+cmd = 3
+response = "%.2f,%.2f,%.2f", adc_measure.a_arm_motor, adc_measure.a_charger, adc_measure.a_batt  
+info = measures arm+motor current, charger current (not available), and battery current (which should just =arm+motor current for now)  
+<br>
 cmd = 2
 response = <br><br>
 
