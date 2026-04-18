@@ -11,12 +11,12 @@
 #include <stdint.h>
 #include "web_socket/web_socket.h"
 
-// not really using Measurements rn
 typedef struct {
-  float v_5v, v_12v, v_19v, v_24v, v_55v;
-  float v_batt_adc, v_batt_bms;
-  float i_arm_motor, i_charger, i_batt;
-} Measurements;
+  uint16_t mv_5v, mv_12v, mv_19v, mv_24v, mv_55v;
+  uint16_t mv_batt_adc, mv_batt_bms;
+  // current in amps
+  float a_arm_motor, a_charger, a_batt;
+} measure_t;
 
 // Define the pins based on the diagram provided
 #define MOTOR_EN_PORT GPIOD
@@ -81,9 +81,9 @@ typedef struct {
 void motor_on(void);
 void motor_off(void);
 void Estop_toggle(void);
-void measure_v(void);
-void measure_batt(void);  // Combines BMS and ADC readings
-void measure_a(void);
+void measure_v(measure_t* arr);
+void measure_batt(measure_t* adc_arr, uint16_t* mv_cells);  // Combines BMS and ADC readings
+void measure_a(measure_t* arr);
 void arm_on(void);
 void arm_off(void);
 void bus_5v_on(void);
@@ -104,6 +104,7 @@ void rsxTask(void *param);
 void bmsUVProtectionTask(void *param);
 void RSX_GPIO_Init(void);
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
+bool_t is_all_zero(bool_t *arr, size_t len);
 
 extern TaskHandle_t  rsx_task_handle;
 extern WebSocket *webSocket;
@@ -125,6 +126,16 @@ extern WebSocket *webSocket;
 #define	OFF_24V_CMD (1U << 14)
 #define	OFF_55V_CMD (1U << 15)
 
+// 12V 24V 55V and battery V
+#define NUM_VOLTAGES 4
+
+
+
 // for sending to ethernet task
 extern bool_t uvEventFlag;
+extern bool_t measureVFlag;
+extern bool_t measureIFlag;
+extern bool_t measureBFlag;
+extern bool_t printStatusFlag[12];
+
 #endif

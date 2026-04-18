@@ -9,7 +9,10 @@
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t batt_voltage_mv[NUMCELLS];
+extern measure_t adc_measure;
+
 float vref_val = 3.3f;
+float vref_val_mv = 3300.0f;
 
 extern I2C_HandleTypeDef hi2c1;
 /**
@@ -280,51 +283,35 @@ static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel) {
   return value;
 }
 
-static float adc_to_voltage(uint32_t adc) { return (adc * vref_val) / ADC_MAX; }
+static uint16_t adc_to_voltage_mv(uint32_t adc) { return (adc *vref_val_mv) / ADC_MAX; }
 
-void measure_v(void) {
+void measure_v(measure_t* arr) {
   calibrate_adc();
   uint32_t adc_12v = adc_read(&hadc1, ADC_CHANNEL_12);    // ADC123_IN12
   uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
-  uint32_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);     // ADC123_IN3
+  //uint32_t adc_19v = adc_read(&hadc1, ADC_CHANNEL_3);     // ADC123_IN3
   uint32_t adc_24v = adc_read(&hadc3, ADC_CHANNEL_14);    // ADC3_IN14
   uint32_t adc_55v = adc_read(&hadc3, ADC_CHANNEL_8);     // ADC3_IN8
 
-  float v_12v = adc_to_voltage(adc_12v) * DIV_12V;
-  float v_battv = adc_to_voltage(adc_battv) * DIV_17V;
-  float v_19v = adc_to_voltage(adc_19v) * DIV_19V;
-  float v_24v = adc_to_voltage(adc_24v) * DIV_24V;
-  float v_55v = adc_to_voltage(adc_55v) * DIV_55V;
+  arr->mv_12v = adc_to_voltage_mv(adc_12v) * DIV_12V;
+  arr->mv_24v = adc_to_voltage_mv(adc_24v) * DIV_24V;
+  arr->mv_55v = adc_to_voltage_mv(adc_55v) * DIV_55V;
+  arr->mv_batt_adc = adc_to_voltage_mv(adc_battv) * DIV_17V;
 
-  TRACE_INFO("adc_12V: %lu\r\n", adc_12v);
-  TRACE_INFO("adc_24V: %lu\r\n", adc_24v);
-  TRACE_INFO("adc_55V: %lu\r\n", adc_55v);
-  TRACE_INFO("ref hadc1: %lu\r\n",
-             adc_read(&hadc1,
-                      ADC_CHANNEL_VREFINT));  // ADC_CHANNEL_VREFINT should
-                                              // give 1.2V as internal reference
-  TRACE_INFO(
-      "ref hadc3: %lu\r\n",
-      adc_read(&hadc3,
-               ADC_CHANNEL_VREFINT));  // ADC_CHANNEL_VREFINT should give 1.2V
-                                       // as internal reference - hadc3 may not
-                                       // have access to VREFINT
-  TRACE_INFO("adc_battV: %lu\r\n", adc_battv);
-  // TRACE_INFO("adc: %.2f \r\n", adc_to_voltage(adc_12v));
-  // TRACE_INFO("12V: %.2f V\r\n", v_12v);
-  // TRACE_INFO("BattV: %.2f V\r\n", v_battv);
-  // TRACE_INFO("19V: %.2f V\r\n", v_19v);
-  // TRACE_INFO("24V: %.2f V\r\n", v_24v);
-  // TRACE_INFO("55V: %.2f V\r\n", v_55v);
 }
 
 // Andrew
-void measure_batt(void) {
+void measure_batt(measure_t* adc_arr, uint16_t* mv_cells) {
   // ADC Measure
   uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
-  float v_battv = adc_to_voltage(adc_battv) * DIV_17V;
+  adc_arr->mv_batt_adc = adc_to_voltage_mv(adc_battv) * DIV_17V;
 
-  // BMS Measure (todo)
+  // BMS Measure
+  measure_batt_bms(mv_cells, 1);
+  adc_arr->mv_batt_bms = 0;
+  for (int i = 0; i < NUMCELLS; i++){
+	  adc_arr->mv_batt_bms += mv_cells[i];
+  }
 }
 
 static float adc_to_current(uint16_t adc, float sensitivity) {
@@ -334,19 +321,17 @@ static float adc_to_current(uint16_t adc, float sensitivity) {
 }
 
 // Tanmay
-void measure_a(void) {
+void measure_a(measure_t* arr) {
   uint16_t adc_arm_motor = adc_read(&hadc1, ADC_CHANNEL_13);
   uint16_t adc_charger = adc_read(&hadc3, ADC_CHANNEL_9);
   uint16_t adc_batt = adc_read(&hadc3, ADC_CHANNEL_15);
 
-  float i_arm_motor =
-      adc_to_current(adc_arm_motor, 0.0133f);  // placeholder sensitivity
-  float i_charger =
-      adc_to_current(adc_charger, 0.0660f);          // placeholder sensitivity
-  float i_batt = adc_to_current(adc_batt, 0.0110f);  // placeholder sensitivity
+  arr->a_arm_motor = adc_to_current(adc_arm_motor, 0.0133f);  // placeholder sensitivity
+  arr->a_charger = adc_to_current(adc_charger, 0.0660f);          // placeholder sensitivity
+  arr->a_batt = adc_to_current(adc_batt, 0.0110f);  // placeholder sensitivity
 
   TRACE_INFO("Currents - Arm+Motor: %.1fA, Charger: %.1fA, Batt: %.1fA\r\n",
-             i_arm_motor, i_charger, i_batt);
+		  arr->a_arm_motor, arr->a_charger, arr->a_batt);
 }
 
 // Turn off buses, arm, and motor
@@ -354,64 +339,64 @@ void shutoff_sequence(void) {
   // Turn off motor and arm
   motor_off();
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);
   arm_off();
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);
 
   // Turn off buses
   bus_55v_off();
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
   bus_24v_off();
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
   bus_19v_off();  // can remove if 19V not used, though it won't make a
                   // difference
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
   bus_12v_off();
   HAL_Delay(100);
-  measure_v();
-  measure_a();
-  measure_batt();  // if 5V bus powers sensor measure first
+  measure_v(&adc_measure);
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);  // if 5V bus powers sensor measure first
   bus_5v_off();
   HAL_Delay(100);
-  measure_v();  // measure after to see if it shows value (depends if 5V powers
+  measure_v(&adc_measure);  // measure after to see if it shows value (depends if 5V powers
                 // sensors)
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);
 }
 
 void power_sequence(void) {
   // 5V bus test
   bus_5v_on();  // works
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
   bus_12v_on();  // works
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
   // Skip 19V?
   bus_24v_on();  // works
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
   bus_55v_on();  // works
   HAL_Delay(100);
-  measure_v();
+  measure_v(&adc_measure);
 
   // Turn on arm
   arm_on();  // doesn't work
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);
 
   // Turn on motor
   motor_on();
   HAL_Delay(100);
-  measure_a();
-  measure_batt();
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);
 }
 
 void rsx_test(void) {
@@ -444,9 +429,9 @@ void Estop_test(void) {
 
   Estop_toggle();
   HAL_Delay(500);
-  measure_v();
-  measure_a();
-  measure_batt();
+  measure_v(&adc_measure);
+  measure_a(&adc_measure);
+  measure_batt(&adc_measure, batt_voltage_mv);
   // Turn off all pins in case
   shutoff_sequence();
 }
@@ -485,24 +470,66 @@ void rsxTask(void *param) {
     // rsx_task_received);
     ///*
     if (rsx_task_received & ESTOP_CMD) Estop_toggle();
-    if (rsx_task_received & MEASURE_V_CMD) measure_v();
-    if (rsx_task_received & MEASURE_B_CMD) {
-      measure_batt_bms(batt_voltage_mv, 1);
-      measure_batt();
+    if (rsx_task_received & MEASURE_V_CMD) {
+    	measure_v(&adc_measure);
+    	measureVFlag = 1;
     }
-    if (rsx_task_received & MEASURE_A_CMD) measure_a();
-    if (rsx_task_received & MOTOR_ON_CMD) motor_on();
-    if (rsx_task_received & MOTOR_OFF_CMD) motor_off();
-    if (rsx_task_received & ARM_ON_CMD) arm_on();
-    if (rsx_task_received & ARM_OFF_CMD) arm_off();
-    if (rsx_task_received & ON_5V_CMD) bus_5v_on();
-    if (rsx_task_received & OFF_5V_CMD) bus_5v_off();
-    if (rsx_task_received & ON_12V_CMD) bus_12v_on();
-    if (rsx_task_received & OFF_12V_CMD) bus_12v_off();
-    if (rsx_task_received & ON_24V_CMD) bus_24v_on();
-    if (rsx_task_received & OFF_24V_CMD) bus_24v_off();
-    if (rsx_task_received & ON_55V_CMD) bus_55v_on();
-    if (rsx_task_received & OFF_55V_CMD) bus_55v_off();
+    if (rsx_task_received & MEASURE_B_CMD) {
+    	measure_batt(&adc_measure, batt_voltage_mv);
+    	measureBFlag = 1;
+    }
+    if (rsx_task_received & MEASURE_A_CMD) {
+    	measure_a(&adc_measure);
+    	measureIFlag = 1;
+    }
+    if (rsx_task_received & MOTOR_ON_CMD) {
+    	motor_on();
+    	printStatusFlag[0] = 1;
+    }
+    if (rsx_task_received & MOTOR_OFF_CMD) {
+    	motor_off();
+    	printStatusFlag[1] = 1;
+    }
+    if (rsx_task_received & ARM_ON_CMD) {
+    	arm_on();
+    	printStatusFlag[2] = 1;
+    }
+    if (rsx_task_received & ARM_OFF_CMD) {
+    	arm_off();
+    	printStatusFlag[3] = 1;
+    }
+    if (rsx_task_received & ON_5V_CMD) {
+    	bus_5v_on();
+    	printStatusFlag[4] = 1;
+    }
+    if (rsx_task_received & OFF_5V_CMD) {
+    	bus_5v_off();
+    	printStatusFlag[5] = 1;
+    }
+    if (rsx_task_received & ON_12V_CMD) {
+    	bus_12v_on();
+    	printStatusFlag[6] = 1;
+    }
+    if (rsx_task_received & OFF_12V_CMD) {
+    	bus_12v_off();
+    	printStatusFlag[7] = 1;
+    }
+    if (rsx_task_received & ON_24V_CMD) {
+    	bus_24v_on();
+    	printStatusFlag[8] = 1;
+    }
+    if (rsx_task_received & OFF_24V_CMD) {
+    	bus_24v_off();
+    	printStatusFlag[9] = 1;
+    }
+    if (rsx_task_received & ON_55V_CMD) {
+    	bus_55v_on();
+    	printStatusFlag[10] = 1;
+    }
+    if (rsx_task_received & OFF_55V_CMD) {
+    	bus_55v_off();
+    	printStatusFlag[11] = 1;
+    }
 
     vTaskDelay(pdMS_TO_TICKS(500));
   }
@@ -528,6 +555,15 @@ void bmsUVProtectionTask(void *param) {
 
    	}
 
+}
+
+bool_t is_all_zero(bool_t *arr, size_t len){
+	for (int i = 0; i < len; i++) {
+	    if (arr[i]) {  // shorter: nonzero check
+	        return 1;
+	    }
+	}
+	return 0;
 }
 
 

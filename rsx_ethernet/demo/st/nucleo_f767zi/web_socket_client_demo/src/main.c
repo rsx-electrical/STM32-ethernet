@@ -28,7 +28,7 @@
 
 // Dependencies
 #include <stdlib.h>
-
+#include <string.h>
 #include "core/net.h"
 #include "debug.h"
 #include "dhcp/dhcp_client.h"
@@ -80,6 +80,12 @@
 OsEvent appEvent;
 bool_t buttonEventFlag;
 bool_t uvEventFlag;
+bool_t measureVFlag;
+bool_t measureIFlag;
+bool_t measureBFlag;
+bool_t printStatusFlag[12];
+char printStatus[12][10] = {"motor on", "motor off", "arm on", "arm off", "5V on","12V on","24V on","55V on",
+		 "5V off","12V off", "24V off", "55V off"};
 
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
@@ -94,6 +100,8 @@ TaskHandle_t  rsx_task_handle;
 TaskHandle_t  bmsUVProtectionHandle;
 TaskHandle_t  ethernetHandle;
 uint16_t batt_voltage_mv[NUMCELLS];
+measure_t adc_measure;
+
 WebSocket *webSocket;
 
 /**
@@ -373,7 +381,7 @@ error_t webSocketClientTest(void) {
          // Format event message
          length = sprintf(buffer, "User button pressed!");
 		length = sprintf(buffer, "%4d,%4d,%4d,%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3] );
-		TRACE_INFO("sending  %s\r\n", buffer);
+		TRACE_INFO("buttonEventFlag set, sending  %s\r\n", buffer);
 
 
 
@@ -408,7 +416,66 @@ error_t webSocketClientTest(void) {
            // Save current time
            timestamp = osGetSystemTime();
        }
-
+       if (measureVFlag){
+           // Clear flag
+    	   measureVFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%4d,%4d,%4d,%4d", adc_measure.mv_12v, adc_measure.mv_24v, adc_measure.mv_55v, adc_measure.mv_batt_adc);
+    	   TRACE_INFO("measureVFlag set, sending voltages: %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
+       }
+       if (measureBFlag){
+           // Clear flag
+    	   measureBFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%4d,%4d,%4d,%4d,%4d,%4d",
+    			   batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3],
+				   adc_measure.mv_batt_adc, adc_measure.mv_batt_bms);
+    	   TRACE_INFO("measureBFlag set, sending battery voltages: %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
+       }
+       if (measureIFlag){
+           // Clear flag
+    	   measureIFlag = FALSE;
+           // Format event message
+    	   length = sprintf(buffer, "%.2f,%.2f,%.2f", adc_measure.a_arm_motor, adc_measure.a_charger, adc_measure.a_batt);
+    	   TRACE_INFO("measureIFlag set, sending currents: %s\r\n", buffer);
+           // Send a message to the WebSocket server
+           error =
+               webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT,
+               NULL);
+           // Any error to report?
+           if (error) break;
+           // Save current time
+           timestamp = osGetSystemTime();
+       }
+       if (is_all_zero(printStatusFlag, sizeof(printStatusFlag))){
+     	   for (size_t i = 0; i < sizeof(printStatusFlag); i++) {
+     		    if (printStatusFlag[i]){
+     		    	length = sprintf(buffer, "Received, %s", printStatus[i]);
+     		    	TRACE_INFO("printStatusFlag set, sending: %s\r\n", buffer);
+					 // Send a message to the WebSocket server
+					 error = webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT, NULL);
+			         if (error) break;
+			         printStatusFlag[i] = 0;
+     		    }
+ 				timestamp = osGetSystemTime();
+     	   }
+       }
       // Get current time
       currentTime = osGetSystemTime();
 
@@ -585,7 +652,6 @@ void rsxButtonTask(void *param) {
 
         //default:
 
-//          measure_v();
 //          button_value = STATE_IDLE;
           //break;
       //}
