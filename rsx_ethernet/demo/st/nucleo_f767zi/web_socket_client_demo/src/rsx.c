@@ -482,18 +482,54 @@ void rsxTask(void *param) {
     	measure_a(&adc_measure);
     	measureIFlag = 1;
     }
-    if (rsx_task_received & MOTOR_ON_CMD) motor_on();
-    if (rsx_task_received & MOTOR_OFF_CMD) motor_off();
-    if (rsx_task_received & ARM_ON_CMD) arm_on();
-    if (rsx_task_received & ARM_OFF_CMD) arm_off();
-    if (rsx_task_received & ON_5V_CMD) bus_5v_on();
-    if (rsx_task_received & OFF_5V_CMD) bus_5v_off();
-    if (rsx_task_received & ON_12V_CMD) bus_12v_on();
-    if (rsx_task_received & OFF_12V_CMD) bus_12v_off();
-    if (rsx_task_received & ON_24V_CMD) bus_24v_on();
-    if (rsx_task_received & OFF_24V_CMD) bus_24v_off();
-    if (rsx_task_received & ON_55V_CMD) bus_55v_on();
-    if (rsx_task_received & OFF_55V_CMD) bus_55v_off();
+    if (rsx_task_received & MOTOR_ON_CMD) {
+    	motor_on();
+    	printStatusFlag[0] = 1;
+    }
+    if (rsx_task_received & MOTOR_OFF_CMD) {
+    	motor_off();
+    	printStatusFlag[1] = 1;
+    }
+    if (rsx_task_received & ARM_ON_CMD) {
+    	arm_on();
+    	printStatusFlag[2] = 1;
+    }
+    if (rsx_task_received & ARM_OFF_CMD) {
+    	arm_off();
+    	printStatusFlag[3] = 1;
+    }
+    if (rsx_task_received & ON_5V_CMD) {
+    	bus_5v_on();
+    	printStatusFlag[4] = 1;
+    }
+    if (rsx_task_received & OFF_5V_CMD) {
+    	bus_5v_off();
+    	printStatusFlag[5] = 1;
+    }
+    if (rsx_task_received & ON_12V_CMD) {
+    	bus_12v_on();
+    	printStatusFlag[6] = 1;
+    }
+    if (rsx_task_received & OFF_12V_CMD) {
+    	bus_12v_off();
+    	printStatusFlag[7] = 1;
+    }
+    if (rsx_task_received & ON_24V_CMD) {
+    	bus_24v_on();
+    	printStatusFlag[8] = 1;
+    }
+    if (rsx_task_received & OFF_24V_CMD) {
+    	bus_24v_off();
+    	printStatusFlag[9] = 1;
+    }
+    if (rsx_task_received & ON_55V_CMD) {
+    	bus_55v_on();
+    	printStatusFlag[10] = 1;
+    }
+    if (rsx_task_received & OFF_55V_CMD) {
+    	bus_55v_off();
+    	printStatusFlag[11] = 1;
+    }
 
     vTaskDelay(pdMS_TO_TICKS(500));
   }
@@ -519,6 +555,15 @@ void bmsUVProtectionTask(void *param) {
 
    	}
 
+}
+
+bool_t is_all_zero(bool_t *arr, size_t len){
+	for (int i = 0; i < len; i++) {
+	    if (arr[i]) {  // shorter: nonzero check
+	        return 1;
+	    }
+	}
+	return 0;
 }
 
 

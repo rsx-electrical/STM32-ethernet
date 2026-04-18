@@ -22,23 +22,50 @@ cmd = 3
 response = "%.2f,%.2f,%.2f", adc_measure.a_arm_motor, adc_measure.a_charger, adc_measure.a_batt  
 info = measures arm+motor current, charger current (not available), and battery current (which should just =arm+motor current for now)  
 <br>
-cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
-
-cmd = 2
-response = <br><br>
+name = MOTOR_ON_CMD
+cmd = 4
+response = motor on
+<br>
+name = MOTOR_OFF_CMD
+cmd = 5
+response = motor off
+<br>
+name = ARM_ON_CMD
+cmd = 6
+response = arm on
+<br>
+name = ARM_OFF_CMD
+cmd = 7
+response = arm off
+<br>
+name = ON_5V
+cmd = 8
+response = 5V on
+<br>
+name = ON_12V
+cmd = 9
+response = 12V on
+<br>
+name = ON_24V
+cmd = 10
+response = 24V on
+<br>
+name = ON_55V
+cmd = 11
+response = 55V on
+<br>
+name = OFF_5V
+cmd = 12
+response = 5V off
+<br>
+name = OFF_12V
+cmd = 13
+response = 12V off
+<br>
+name = OFF_24V
+cmd = 14
+response = 24V off
+<br>
+name = OFF_55V
+cmd = 15
+response = 55V off

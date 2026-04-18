@@ -28,7 +28,7 @@
 
 // Dependencies
 #include <stdlib.h>
-
+#include <string.h>
 #include "core/net.h"
 #include "debug.h"
 #include "dhcp/dhcp_client.h"
@@ -83,6 +83,10 @@ bool_t uvEventFlag;
 bool_t measureVFlag;
 bool_t measureIFlag;
 bool_t measureBFlag;
+bool_t printStatusFlag[12];
+char printStatus[12][10] = {"motor on", "motor off", "arm on", "arm off", "5V on","12V on","24V on","55V on",
+		 "5V off","12V off", "24V off", "55V off"};
+
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
 SlaacSettings slaacSettings;
@@ -458,6 +462,19 @@ error_t webSocketClientTest(void) {
            if (error) break;
            // Save current time
            timestamp = osGetSystemTime();
+       }
+       if (is_all_zero(printStatusFlag, sizeof(printStatusFlag))){
+     	   for (size_t i = 0; i < sizeof(printStatusFlag); i++) {
+     		    if (printStatusFlag[i]){
+     		    	length = sprintf(buffer, "Received, %s", printStatus[i]);
+     		    	TRACE_INFO("printStatusFlag set, sending: %s\r\n", buffer);
+					 // Send a message to the WebSocket server
+					 error = webSocketSend(webSocket, buffer, length, WS_FRAME_TYPE_TEXT, NULL);
+			         if (error) break;
+			         printStatusFlag[i] = 0;
+     		    }
+ 				timestamp = osGetSystemTime();
+     	   }
        }
       // Get current time
       currentTime = osGetSystemTime();

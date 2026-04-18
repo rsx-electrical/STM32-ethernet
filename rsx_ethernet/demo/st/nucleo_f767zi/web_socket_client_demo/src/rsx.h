@@ -104,6 +104,7 @@ void rsxTask(void *param);
 void bmsUVProtectionTask(void *param);
 void RSX_GPIO_Init(void);
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
+bool_t is_all_zero(bool_t *arr, size_t len);
 
 extern TaskHandle_t  rsx_task_handle;
 extern WebSocket *webSocket;
@@ -135,5 +136,6 @@ extern bool_t uvEventFlag;
 extern bool_t measureVFlag;
 extern bool_t measureIFlag;
 extern bool_t measureBFlag;
+extern bool_t printStatusFlag[12];
 
 #endif
