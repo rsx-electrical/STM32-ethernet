@@ -77,6 +77,7 @@ Ping statistics for 192.168.0.20:
 Approximate round trip times in milli-seconds:
     Minimum = 1ms, Maximum = 2ms, Average = 1ms
 ```
+Debugging tip: if ping does not work, try disabling firewall 
 
 ### To run the server:
 Install the Python package:
