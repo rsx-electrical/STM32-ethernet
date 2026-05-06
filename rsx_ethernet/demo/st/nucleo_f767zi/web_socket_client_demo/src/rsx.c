@@ -173,7 +173,7 @@ void RSX_GPIO_Init(void) {
 }
 
 void Estop_toggle(void) {
-  TRACE_INFO("Enable estop");
+  TRACE_INFO("Enable estop\n");
   HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_SET);
   HAL_Delay(100);
   HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_RESET);
@@ -186,6 +186,7 @@ void arm_off(void) {
 }
 
 void motor_on(void) {
+	TRACE_INFO("motor_on\n");
   HAL_GPIO_WritePin(MOTOR_EN_PORT, MOTOR_EN_PIN, GPIO_PIN_SET);
 }
 
@@ -375,30 +376,14 @@ void shutoff_sequence(void) {
 void power_sequence(void) {
   // 5V bus test
   bus_5v_on();  // works
-  HAL_Delay(100);
-  measure_v(&adc_measure);
   bus_12v_on();  // works
-  HAL_Delay(100);
-  measure_v(&adc_measure);
   // Skip 19V?
   bus_24v_on();  // works
-  HAL_Delay(100);
-  measure_v(&adc_measure);
   bus_55v_on();  // works
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-
   // Turn on arm
   arm_on();  // doesn't work
-  HAL_Delay(100);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
-
   // Turn on motor
   motor_on();
-  HAL_Delay(100);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
 }
 
 void rsx_test(void) {
@@ -451,10 +436,11 @@ int parse_int(char_t *received_cmd, int *out) {
 }
 
 void rsxTask(void *param) {
+	// set initial states:
+	power_sequence();
+
   uint32_t rsx_task_received;
-  TRACE_INFO("got here?\r\n");
   for (;;) {
-	    TRACE_INFO("before tasknotifywait\r\n");
     xTaskNotifyWait(0, 0xFFFFFFFFUL, &rsx_task_received, portMAX_DELAY);
     TRACE_INFO("rsx_task_received notify bits = 0x%lx\r\n", rsx_task_received);
     ///*

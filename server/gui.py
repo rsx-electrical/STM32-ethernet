@@ -172,36 +172,37 @@ class ToggleButtonsWindow(QWidget):
             # Look up the correct int command
         cmd = self.BUTTON_COMMANDS.get(name, {}).get(checked, 0)
 
-        print(f"[GUI DEBUG] Button {name} = {checked}, sending {hex(cmd)}")
+        print(f"[GUI DEBUG] Button {name} = {checked}, sending {cmd}")
 
             # Broadcast it
         asyncio.create_task(self.broadcast(cmd))
         
     # Bitmask commands (same as your C defines)
+    # in dec
     BUTTON_COMMANDS = {
         "Motor": {
-            True: 4,   # MOTOR_ON_CMD
-            False: 5,  # MOTOR_OFF_CMD
+            True: "4",   # MOTOR_ON_CMD
+            False: "5",  # MOTOR_OFF_CMD
         },
         "Arm": {
-            True: 6,   # ARM_ON_CMD
-            False: 7,  # ARM_OFF_CMD
+            True: "6",   # ARM_ON_CMD
+            False: "7",  # ARM_OFF_CMD
         },
         "5V": {
-            True: 8,   # ON_5V_CMD
-            False: 12, # OFF_5V_CMD
+            True: "8",   # ON_5V_CMD
+            False: "12", # OFF_5V_CMD
         },
         "12V": {
-            True: 9,   # ON_12V_CMD
-            False: 13, # OFF_12V_CMD
+            True: "9",   # ON_12V_CMD
+            False: "13", # OFF_12V_CMD
         },
         "24V": {
-            True: 10,  # ON_24V_CMD
-            False: 14, # OFF_24V_CMD
+            True: "10",  # ON_24V_CMD
+            False: "14", # OFF_24V_CMD
         },
         "55V": {
-            True: 11,  # ON_55V_CMD
-            False: 15, # OFF_55V_CMD
+            True: "11",  # ON_55V_CMD
+            False: "15", # OFF_55V_CMD
         },
         "ESTOP": 0   # Special case: always send 0
     }
@@ -213,7 +214,7 @@ class ToggleButtonsWindow(QWidget):
         message = self.BUTTON_COMMANDS.get(name, {}).get(checked, 0)
 
         # Debug
-        print(f"[GUI DEBUG] Button {name} set to {checked}, sending command: {hex(message)}")
+        print(f"[GUI DEBUG] Button {name} set to {checked}, sending command: {message}")
         
         
         # Schedule async send without blocking GUI
@@ -224,7 +225,7 @@ class ToggleButtonsWindow(QWidget):
             print("No clients connected.")
             return
 
-        print(f"Sending to {len(self.clients)} client(s): {message} ({hex(message)})")
+        print(f"Sending to {len(self.clients)} client(s): {message} ({message})")
         await asyncio.gather(
             *(client.send(str(message)) for client in self.clients),
             return_exceptions=True
