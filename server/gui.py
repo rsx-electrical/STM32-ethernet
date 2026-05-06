@@ -263,7 +263,7 @@ class ToggleButtonsWindow(QWidget):
 
     def refresh_b(self):
         print("Refreshing battery...")
-        print(f"sending 2")
+        #print(f"sending 2")
 
             # Broadcast it
         asyncio.create_task(self.broadcast(2))
