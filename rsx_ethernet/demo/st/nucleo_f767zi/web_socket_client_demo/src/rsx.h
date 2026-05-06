@@ -1,6 +1,8 @@
 #ifndef RSX_H
 #define RSX_H
 
+#define DISABLE_UV_PROTECTION
+
 #include <stdlib.h>
 
 #include "stm32f7xx.h"
@@ -96,7 +98,6 @@ void bus_24v_on(void);
 void bus_24v_off(void);
 void bus_55v_on(void);
 void bus_55v_off(void);
-void Estop_test(void);
 void rsx_test(void);
 void shutoff_sequence(void);
 int parse_int(char_t *received_cmd, int *out);

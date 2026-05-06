@@ -3,6 +3,7 @@ import websockets
 import gui
 import sys
 from qasync import QEventLoop
+import re
 
 ##############################################
 # from rsx.h:
@@ -28,27 +29,27 @@ bms_mv = [0,0,0,0]
 async def handler(websocket, window):
     clients.add(websocket)
     print("Connected!!!!")
-    try:
-        # async for message in websocket:
-        #     pass
-        
+    try:       
         await websocket.send("FINALLY")
         async for message in websocket:
-            print("TEST: ", message)
-            values = [int(x) for x in message.split(",") if x]
-            for i in range(min(4, len(values))):
-                bms_mv[i] = values[i]
-            print("BMS: ", bms_mv)
-            await websocket.send("ACK: " + message)
+            if re.fullmatch(r"\d+(,\d+)*", message):
+                values = [int(x) for x in message.split(",") if x]
+                for i in range(min(4, len(values))):
+                    bms_mv[i] = values[i]
+                print("BMS:", bms_mv)
+                await websocket.send("ACK: " + message)
+            else:
+                # If parsing fails, treat as plain string
+                print("RAW_MSG: ", message)
     finally:
         clients.remove(websocket) 
 
-async def stdin_sender():
-    loop = asyncio.get_running_loop()
+# async def stdin_sender():
+#     loop = asyncio.get_running_loop()
 
-    while True:
-        msg = await loop.run_in_executor(None, input)
-        for ws in  clients:
-            print("SENT CMD: ", msg)
-            await ws.send(msg)
+#     while True:
+#         msg = await loop.run_in_executor(None, input)
+#         for ws in  clients:
+#             print("SENT CMD: ", msg)
+#             await ws.send(msg)
 

@@ -1,15 +1,15 @@
 #include "rsx.h"
-
 #include <limits.h>
 #include <stdlib.h>
 #include <stdint.h>
-
 #include "debug.h"
+
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t batt_voltage_mv[NUMCELLS];
 extern measure_t adc_measure;
+TaskHandle_t  rsx_task_handle;
 
 float vref_val = 3.3f;
 float vref_val_mv = 3300.0f;
@@ -420,21 +420,6 @@ void rsx_test(void) {
   shutoff_sequence();
 }
 
-void Estop_test(void) {
-  // Ensure buses, arm, and motor are off
-  shutoff_sequence();
-
-  // Turn on all
-  power_sequence();
-
-  Estop_toggle();
-  HAL_Delay(500);
-  measure_v(&adc_measure);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
-  // Turn off all pins in case
-  shutoff_sequence();
-}
 
 int parse_int(char_t *received_cmd, int *out) {
   char *end;
@@ -458,18 +443,22 @@ int parse_int(char_t *received_cmd, int *out) {
   *out = (int)val;
   // send the command to rsx_task
   // TODO: enable multiple commands at once
+  TRACE_INFO("parsed int = %d\n", (int)val);
   xTaskNotify(rsx_task_handle, (1U << val), eSetBits);
   return 0;  // success
 }
 
 void rsxTask(void *param) {
   uint32_t rsx_task_received;
+  TRACE_INFO("got here?\r\n");
   for (;;) {
+	    TRACE_INFO("before tasknotifywait\r\n");
     xTaskNotifyWait(0, 0xFFFFFFFFUL, &rsx_task_received, portMAX_DELAY);
-    // TRACE_INFO("rsx_task_received notify bits = 0x%lx\r\n",
-    // rsx_task_received);
+    TRACE_INFO("rsx_task_received notify bits = 0x%lx\r\n", rsx_task_received);
     ///*
-    if (rsx_task_received & ESTOP_CMD) Estop_toggle();
+    if (rsx_task_received & ESTOP_CMD) {
+    	Estop_toggle();
+    }
     if (rsx_task_received & MEASURE_V_CMD) {
     	measure_v(&adc_measure);
     	measureVFlag = 1;
@@ -544,14 +533,16 @@ void bmsUVProtectionTask(void *param) {
         measure_batt_bms(batt_voltage_mv, 1);
         total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
        	length = sprintf(buffer, "%4d,%4d,%4d,%4d; total=%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3], total_v );
-       	TRACE_INFO("sending  %s\r\n", buffer);
+       	//TRACE_INFO("sending  %s\r\n", buffer);
        	if (total_v < 12000 && total_v != 0 ) {
        		TRACE_INFO("UV! UV! UV!\r\n");
+#ifndef DISABLE_UV_PROTECTION
        		Estop_toggle();
        		uvEventFlag=1;
+#endif
        	}
 
-       	vTaskDelay(pdMS_TO_TICKS(500));
+       	vTaskDelay(pdMS_TO_TICKS(5000));
 
    	}
 
