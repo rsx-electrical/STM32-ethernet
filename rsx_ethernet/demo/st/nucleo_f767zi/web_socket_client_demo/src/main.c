@@ -500,19 +500,14 @@ error_t webSocketClientTest(void) {
 }
 
 /**
- * @brief User task
+ * @brief websocketTask, creates the websocket upon reset
  * @param[in] param Unused parameter
  **/
 
-void userTask(void *param) {
+void websocketTask(void *param) {
   // Endless loop
   while (1) {
-    // Wait for the user button to be pressed
-    osWaitForEvent(&appEvent, INFINITE_DELAY);
-    // Clear flag
-    buttonEventFlag = FALSE;
-
-    // WebSocket client test routine
+    // Main websocket routine
     webSocketClientTest();
   }
 }
@@ -793,7 +788,7 @@ int_t main(void) {
   taskParams.priority = OS_TASK_PRIORITY_NORMAL;
 
   // Create ethernet task
-  ethernetHandle = osCreateTask("User", userTask, NULL, &taskParams);
+  ethernetHandle = osCreateTask("User", websocketTask, NULL, &taskParams);
   // Failed to create the task?
   if (ethernetHandle == NULL) {
     // Debug message
