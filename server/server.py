@@ -32,7 +32,7 @@ async def handler(websocket, window):
     try:       
         await websocket.send("FINALLY")
         async for message in websocket:
-            if re.fullmatch(r"\d+(,\d+)*", message):
+            if re.fullmatch(r"\s*\d+(\s*,\s*\d+)*\s*", message):
                 values = [int(x) for x in message.split(",") if x]
                 for i in range(min(4, len(values))):
                     bms_mv[i] = values[i]

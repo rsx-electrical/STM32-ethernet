@@ -175,6 +175,8 @@ void RSX_GPIO_Init(void) {
 void Estop_toggle(void) {
   TRACE_INFO("Enable estop");
   HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_SET);
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(ESTOP_PORT, ESTOP_PIN, GPIO_PIN_RESET);
 }
 
 void arm_on(void) { HAL_GPIO_WritePin(ARM_EN_PORT, ARM_EN_PIN, GPIO_PIN_SET); }
