@@ -84,8 +84,8 @@ bool_t measureVFlag;
 bool_t measureIFlag;
 bool_t measureBFlag;
 bool_t printStatusFlag[12];
-char printStatus[12][10] = {"motor on", "motor off", "arm on", "arm off", "5V on","12V on","24V on","55V on",
-		 "5V off","12V off", "24V off", "55V off"};
+char printStatus[12][10] = {"motor on", "motor off", "arm on", "arm off", "5V on","5V off","12V on","12V off","24V on","24V off",
+		 "55V on","55V off"};
 
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;
