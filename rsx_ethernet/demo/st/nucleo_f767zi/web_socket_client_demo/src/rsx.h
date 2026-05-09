@@ -31,15 +31,17 @@ typedef struct {
 #define LED_R_PORT GPIOF
 #define LED_R_PIN GPIO_PIN_12
 
-#define ARM_EN_PORT GPIOE
-#define ARM_EN_PIN GPIO_PIN_6
+//#define ARM_EN_PORT GPIOE
+//#define ARM_EN_PIN GPIO_PIN_6
+
+// make 19V ena ARM ena instead
+#define ARM_EN_PORT GPIOF
+#define ARM_EN_PIN GPIO_PIN_14
 
 #define BUS_5V_PORT GPIOF
 #define BUS_5V_PIN GPIO_PIN_15
 #define BUS_12V_PORT GPIOD
 #define BUS_12V_PIN GPIO_PIN_13
-#define BUS_19V_PORT GPIOF
-#define BUS_19V_PIN GPIO_PIN_14
 #define BUS_24V_PORT GPIOB
 #define BUS_24V_PIN GPIO_PIN_6
 #define BUS_55V_PORT GPIOB
@@ -92,8 +94,6 @@ void bus_5v_on(void);
 void bus_5v_off(void);
 void bus_12v_on(void);
 void bus_12v_off(void);
-void bus_19v_on(void);
-void bus_19v_off(void);
 void bus_24v_on(void);
 void bus_24v_off(void);
 void bus_55v_on(void);

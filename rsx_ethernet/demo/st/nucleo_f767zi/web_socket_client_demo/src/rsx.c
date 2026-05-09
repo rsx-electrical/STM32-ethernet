@@ -51,9 +51,6 @@ void RSX_GPIO_Init(void) {
   GPIO_InitStruct.Pin = BUS_12V_PIN;
   HAL_GPIO_Init(BUS_12V_PORT, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = BUS_19V_PIN;
-  HAL_GPIO_Init(BUS_19V_PORT, &GPIO_InitStruct);
-
   GPIO_InitStruct.Pin = BUS_24V_PIN;
   HAL_GPIO_Init(BUS_24V_PORT, &GPIO_InitStruct);
 
@@ -210,14 +207,6 @@ void bus_12v_off(void) {
   HAL_GPIO_WritePin(BUS_12V_PORT, BUS_12V_PIN, GPIO_PIN_RESET);
 }
 
-void bus_19v_on(void) {
-  HAL_GPIO_WritePin(BUS_19V_PORT, BUS_19V_PIN, GPIO_PIN_SET);
-}
-
-void bus_19v_off(void) {
-  HAL_GPIO_WritePin(BUS_19V_PORT, BUS_19V_PIN, GPIO_PIN_RESET);
-}
-
 void bus_24v_on(void) {
   HAL_GPIO_WritePin(BUS_24V_PORT, BUS_24V_PIN, GPIO_PIN_SET);
 }
@@ -356,7 +345,6 @@ void shutoff_sequence(void) {
   bus_24v_off();
   HAL_Delay(100);
   measure_v(&adc_measure);
-  bus_19v_off();  // can remove if 19V not used, though it won't make a
                   // difference
   HAL_Delay(100);
   measure_v(&adc_measure);
@@ -377,7 +365,6 @@ void power_sequence(void) {
   // 5V bus test
   bus_5v_on();  // works
   bus_12v_on();  // works
-  // Skip 19V?
   bus_24v_on();  // works
   bus_55v_on();  // works
   // Turn on arm
