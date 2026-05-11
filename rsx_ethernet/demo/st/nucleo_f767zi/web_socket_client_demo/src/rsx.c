@@ -9,7 +9,6 @@ extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t batt_voltage_mv[NUMCELLS];
 extern measure_t adc_measure;
-TaskHandle_t  rsx_task_handle;
 
 //LED states (1 is on, 0 is off)
 bool_t led_red_on = 0;
@@ -389,26 +388,6 @@ void power_sequence(void) {
   motor_on();
 }
 
-void rsx_test(void) {
-  // Ensure buses, arm, and motor are off
-  shutoff_sequence();
-
-  // Turn on all
-  power_sequence();
-  shutoff_sequence();
-  power_sequence();
-  shutoff_sequence();
-  power_sequence();
-  shutoff_sequence();
-  power_sequence();
-  shutoff_sequence();
-
-  HAL_Delay(10000);
-  osDelayTask(10000);
-
-  // Turn off all
-  shutoff_sequence();
-}
 
 
 int parse_int(char_t *received_cmd, int *out) {

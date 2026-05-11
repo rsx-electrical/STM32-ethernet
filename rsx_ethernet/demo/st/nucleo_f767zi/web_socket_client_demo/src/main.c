@@ -117,6 +117,7 @@ I2C_HandleTypeDef hi2c1;
 
 TaskHandle_t  bmsUVProtectionHandle;
 TaskHandle_t  ethernetHandle;
+TaskHandle_t  rsx_task_handle;
 uint16_t batt_voltage_mv[NUMCELLS];
 measure_t adc_measure;
 
@@ -841,13 +842,6 @@ int_t main(void) {
 
   rsx_task_handle = osCreateTask("rsx", rsxTask, NULL, &taskParams);
   if (rsx_task_handle == NULL) {
-    // Debug message
-    TRACE_ERROR("Failed to create task!\r\n");
-  }
-
-
-  spiSendTaskHandle = osCreateTask("spi_send", rsxSpiSendTask, NULL, &taskParams);
-  if (spiSendTaskHandle == NULL) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
