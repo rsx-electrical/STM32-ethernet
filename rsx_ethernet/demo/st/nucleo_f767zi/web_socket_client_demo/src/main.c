@@ -83,9 +83,27 @@ bool_t uvEventFlag;
 bool_t measureVFlag;
 bool_t measureIFlag;
 bool_t measureBFlag;
-bool_t printStatusFlag[12];
-char printStatus[12][10] = {"motor on", "motor off", "arm on", "arm off", "5V on","5V off","12V on","12V off","24V on","24V off",
-		 "55V on","55V off"};
+bool_t printStatusFlag[18];
+char printStatus[18][20] = {
+		"motor on",
+		"motor off",
+		"arm on",
+		"arm off",
+		"5V on",
+		"5V off",
+		"12V on",
+		"12V off",
+		"24V on",
+		"24V off",
+		 "55V on",
+		 "55V off",
+		 "Red LED off",
+		 "Red LED on",
+		 "Green LED off",
+		 "Green LED on",
+		 "Blue LED off",
+		 "Blue LED on"
+};
 
 DhcpClientSettings dhcpClientSettings;
 DhcpClientContext dhcpClientContext;

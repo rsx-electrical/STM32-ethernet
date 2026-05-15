@@ -98,6 +98,13 @@ void bus_24v_on(void);
 void bus_24v_off(void);
 void bus_55v_on(void);
 void bus_55v_off(void);
+void LED_G_on();
+void LED_G_off();
+void LED_B_on();
+void LED_B_off();
+void LED_R_on();
+void LED_R_off();
+
 void rsx_test(void);
 void shutoff_sequence(void);
 int parse_int(char_t *received_cmd, int *out);
@@ -110,7 +117,6 @@ bool_t is_all_zero(bool_t *arr, size_t len);
 extern TaskHandle_t  rsx_task_handle;
 extern WebSocket *webSocket;
 
-#define ESTOP_CMD	(1U << 0)
 #define MEASURE_V_CMD (1U << 1)
 #define	MEASURE_B_CMD (1U << 2)
 #define	MEASURE_A_CMD (1U << 3)
@@ -126,6 +132,10 @@ extern WebSocket *webSocket;
 #define	OFF_12V_CMD (1U << 13)
 #define	OFF_24V_CMD (1U << 14)
 #define	OFF_55V_CMD (1U << 15)
+#define ESTOP_CMD	(1U << 16)
+#define R_LED_TOGGLE	(1U << 17)
+#define G_LED_TOGGLE	(1U << 18)
+#define B_LED_TOGGLE	(1U << 19)
 
 // 12V 24V 55V and battery V
 #define NUM_VOLTAGES 4
@@ -137,6 +147,6 @@ extern bool_t uvEventFlag;
 extern bool_t measureVFlag;
 extern bool_t measureIFlag;
 extern bool_t measureBFlag;
-extern bool_t printStatusFlag[12];
+extern bool_t printStatusFlag[18];
 
 #endif

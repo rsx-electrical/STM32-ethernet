@@ -11,6 +11,12 @@ extern uint16_t batt_voltage_mv[NUMCELLS];
 extern measure_t adc_measure;
 TaskHandle_t  rsx_task_handle;
 
+//LED states (1 is on, 0 is off)
+bool_t led_red_on = 0;
+bool_t led_green_on = 0;
+bool_t led_blue_on = 0;
+
+
 float vref_val = 3.3f;
 float vref_val_mv = 3300.0f;
 
@@ -60,7 +66,15 @@ void RSX_GPIO_Init(void) {
   // E-Stop Control
   GPIO_InitStruct.Pin = ESTOP_PIN;
   HAL_GPIO_Init(ESTOP_PORT, &GPIO_InitStruct);
+  // LED's
+  GPIO_InitStruct.Pin = LED_R_PIN;
+  HAL_GPIO_Init(LED_R_PORT, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = LED_G_PIN;
+  HAL_GPIO_Init(LED_GB_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = LED_B_PIN;
+  HAL_GPIO_Init(LED_GB_PORT, &GPIO_InitStruct);
   /* 3. Configure Analog Input Pins (Measurement)
      Set to Analog mode to disable digital input buffers for better ADC accuracy
    */
@@ -95,6 +109,8 @@ void RSX_GPIO_Init(void) {
 
   GPIO_InitStruct.Pin = MEASURE_BATT_A_PIN;
   HAL_GPIO_Init(MEASURE_BATT_A_PORT, &GPIO_InitStruct);
+
+
 
   // enable adc clokc
   __HAL_RCC_ADC1_CLK_ENABLE();
@@ -425,6 +441,9 @@ int parse_int(char_t *received_cmd, int *out) {
 void rsxTask(void *param) {
 	// set initial states:
 	power_sequence();
+	led_red_on = 0;
+	led_green_on = 0;
+	led_blue_on = 0;
 
   uint32_t rsx_task_received;
   for (;;) {
@@ -494,7 +513,39 @@ void rsxTask(void *param) {
     	bus_55v_off();
     	printStatusFlag[11] = 1;
     }
-
+    if (rsx_task_received & R_LED_TOGGLE) {
+    	if(led_red_on){
+    		LED_R_off();
+    		led_red_on = 0;
+    		printStatusFlag[12] = 1;
+    	} else {
+    		LED_R_on();
+    		led_red_on = 1;
+    		printStatusFlag[13] = 1;
+    	}
+    }
+    if (rsx_task_received & G_LED_TOGGLE) {
+    	if(led_green_on){
+    		LED_G_off();
+    		led_green_on = 0;
+    		printStatusFlag[14] = 1;
+    	} else {
+    		LED_G_on();
+    		led_green_on = 1;
+    		printStatusFlag[15] = 1;
+    	}
+    }
+    if (rsx_task_received & B_LED_TOGGLE) {
+    	if(led_blue_on){
+    		LED_B_off();
+    		led_blue_on = 0;
+    		printStatusFlag[16] = 1;
+    	} else {
+    		LED_B_on();
+    		led_blue_on = 1;
+    		printStatusFlag[17] = 1;
+    	}
+    }
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }

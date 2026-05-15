@@ -1,8 +1,3 @@
-name = ESTOP_CMD
-cmd = 0  
-response = N/A  
-info = turns off rover  
-<br>
 name = MEASURE_V_CMD
 cmd = 1
 response = "%4d,%4d,%4d,%4d", adc_measure.mv_12v, adc_measure.mv_24v, adc_measure.mv_55v, adc_measure.mv_batt_adc  
@@ -69,3 +64,20 @@ response = 24V off
 name = OFF_55V
 cmd = 15
 response = 55V off
+<br>
+name = ESTOP_CMD
+cmd = 16  
+response = N/A  
+info = turns off rover  
+<br>
+name = R_LED_TOGGLE
+cmd = 17
+response = Red LED On/Off
+<br>
+name = G_LED_TOGGLE
+cmd = 18
+response = Green LED On/Off
+<br>
+name = B_LED_TOGGLE
+cmd = 19
+response = Blue LED On/Off
