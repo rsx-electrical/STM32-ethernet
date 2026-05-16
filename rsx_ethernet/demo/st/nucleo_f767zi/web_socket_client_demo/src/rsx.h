@@ -1,7 +1,7 @@
 #ifndef RSX_H
 #define RSX_H
 
-#define DISABLE_UV_PROTECTION
+//#define DISABLE_UV_PROTECTION
 
 #include <stdlib.h>
 

@@ -401,7 +401,10 @@ error_t webSocketClientTest(void) {
 
          // Format event message
          length = sprintf(buffer, "User button pressed!");
-		TRACE_INFO("buttonEventFlag set, sending  %s\r\n", buffer);
+		length = sprintf(buffer, "%4d,%4d,%4d,%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3] );
+		TRACE_INFO("sending  %s\r\n", buffer);
+
+
 
          // Debug message
          TRACE_INFO("WebSocket: Sending message (%" PRIuSIZE " bytes)...\r\n",
@@ -531,6 +534,23 @@ void websocketTask(void *param) {
   }
 }
 
+void userTask(void *param) {
+  // Endless loop
+  while (1) {
+    // Wait for the user button to be pressed
+    osWaitForEvent(&appEvent, INFINITE_DELAY);
+
+    // Clear flag
+    //buttonEventFlag = FALSE;
+
+    // WebSocket client test routine
+    uint16_t my_bms[6];
+    measure_batt_bms(my_bms, 6);
+
+    //webSocketClientTest();
+  }
+}
+
 /**
  * @brief Button task
  **/
@@ -583,6 +603,89 @@ void ledTask(void *param) {
 #define ENABLE_55 5
 #define ENABLE_ARM 6
 #define ENABLE_MOTOR 7
+
+void rsxButtonTask(void *param) {
+  int button_value = 0;
+  while (1) {
+    //if (buttonEventFlag) {
+      // Clear flag
+      //buttonEventFlag = FALSE;
+      // Check user button state
+      //switch (button_value) {
+//        case STATE_IDLE:
+//          bus_5v_on();
+//          BSP_LED_On(LED1);
+//          TRACE_INFO("RSX: 5V Enabled\r\n");
+//          button_value = ENABLE_5;
+//          break;
+//
+//        case ENABLE_5:
+//          bus_12v_on();
+//          BSP_LED_Off(LED1);
+//
+//          TRACE_INFO("RSX: 12V Enabled\r\n");
+//          button_value = ENABLE_12;
+//          break;
+//
+//        case ENABLE_12:
+//          bus_19v_on();
+//          BSP_LED_On(LED1);
+//          TRACE_INFO("RSX: 19V Enabled\r\n");
+//          button_value = ENABLE_19;
+//          break;
+//
+//        case ENABLE_19:
+//          bus_24v_on();
+//          BSP_LED_Off(LED1);
+//
+//          TRACE_INFO("RSX: 24V Enabled\r\n");
+//          button_value = ENABLE_24;
+//          break;
+//
+//        case ENABLE_24:
+//          bus_55v_on();
+//          BSP_LED_On(LED1);
+//
+//          TRACE_INFO("RSX: 55V Enabled\r\n");
+//          button_value = ENABLE_55;
+//          break;
+//
+//        case ENABLE_55:
+//          arm_on();
+//          BSP_LED_Off(LED1);
+//          TRACE_INFO("RSX: Arm Enabled\r\n");
+//          button_value = ENABLE_ARM;
+//          break;
+//
+//        case ENABLE_ARM:
+//          motor_on();
+//          BSP_LED_On(LED1);
+//          TRACE_INFO("RSX: Motor Enabled\r\n");
+//          button_value = ENABLE_MOTOR;
+//          break;
+//
+//        case ENABLE_MOTOR:
+//          shutoff_sequence();
+//          BSP_LED_Off(LED1);
+//          TRACE_INFO("RSX: All Systems Off\r\n");
+//          button_value = STATE_IDLE;
+//          break;
+
+        //default:
+
+//          measure_v();
+//          button_value = STATE_IDLE;
+          //break;
+      //}
+    //}
+  }
+}
+
+/**
+ * @brief Main entry point
+ * @return Unused value
+ * @todo Call rsxTask in main()
+ **/
 
 int_t main(void) {
   error_t error;
@@ -813,6 +916,13 @@ int_t main(void) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
+  // Create user task
+  taskId = osCreateTask("User", userTask, NULL, &taskParams);
+  // Failed to create the task?
+  if (taskId == OS_INVALID_TASK_ID) {
+    // Debug message
+    TRACE_ERROR("Failed to create task!\r\n");
+  }
 
   // Set task parameters
   taskParams = OS_TASK_DEFAULT_PARAMS;
@@ -846,16 +956,28 @@ int_t main(void) {
     TRACE_ERROR("Failed to create task!\r\n");
   }
 
-#ifndef DISABLE_UV_PROTECTION
-  bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
-  if (bmsUVProtectionHandle == NULL) {
+  taskId = osCreateTask("button", rsxButtonTask, NULL, &taskParams);
+  if (taskId == OS_INVALID_TASK_ID) {
     // Debug message
     TRACE_ERROR("Failed to create task!\r\n");
   }
-#endif
+
+
+// #ifndef DISABLE_UV_PROTECTION
+//   bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
+//   if (bmsUVProtectionHandle == NULL) {
+//     // Debug message
+//     TRACE_ERROR("Failed to create task!\r\n");
+//   }
+// #endif
   // Create temperature sensor task
    //ads1015TempTaskCreate();   // <--- ADD THIS LINE
-
+  spiSendTaskHandle = osCreateTask("spi_send", rsxSpiSendTask, NULL, &taskParams);
+  if (spiSendTaskHandle == NULL) {
+    // Debug message
+    TRACE_ERROR("Failed to create task!\r\n");
+  }
+  
    // Start the execution of tasks
    osStartKernel();
 

@@ -118,33 +118,26 @@ void RSX_GPIO_Init(void) {
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  // hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  // hadc1.Init.NbrOfConversion = 4;  // Number of channels
+  hadc1.Init.NbrOfConversion = 4;   // Number of channels
 
   // adc initialization
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
-  // hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  // hadc3.Init.NbrOfConversion = 4;  // Number of channels
+  hadc3.Init.NbrOfConversion = 4;  // Number of channels
   /* 3. Apply the config */
-
-  hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 1;
-
-  hadc3.Init.ScanConvMode = DISABLE;
-  hadc3.Init.NbrOfConversion = 1;
-
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
@@ -152,36 +145,43 @@ void RSX_GPIO_Init(void) {
     TRACE_ERROR("ADC Init Error\r\n");
   }
 
-  // if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK) {
-  //   TRACE_ERROR("ADC1 calibration failed\r\n");
-  // }
+  /* 3.5 set adc channels*/
+  ADC_ChannelConfTypeDef sConfig = {0};
+//ADC123_IN10
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = 2;
+  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+//ADC123_IN12
+  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Rank = 3;
+  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+//ADC123_IN3
+  sConfig.Channel = ADC_CHANNEL_3;
+  sConfig.Rank = 4;
+  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+ //ADC123_IN13
+  sConfig.Channel = ADC_CHANNEL_13;
+  sConfig.Rank = 1;
+  HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 
-  // if (HAL_ADCEx_Calibration_Start(&hadc3) != HAL_OK) {
-  //   TRACE_ERROR("ADC3 calibration failed\r\n");
-  // }
-
+  //ADC3_IN9
+  sConfig.Channel = ADC_CHANNEL_9;
+  sConfig.Rank = 1;
+  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
+  //ADC3_IN15
+  sConfig.Channel = ADC_CHANNEL_15;
+  sConfig.Rank = 2;
+  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
+  //ADC123_IN13
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = 3;
+  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
+ //ADC3_IN14,
+  sConfig.Channel = ADC_CHANNEL_14;
+  sConfig.Rank = 4;
+  HAL_ADC_ConfigChannel(&hadc3, &sConfig);
   /* 4. Set initial safe state (All OFF) */
   shutoff_sequence();
-
-  // I2C1 Init for ADS1015
-  __HAL_RCC_I2C1_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;  // PB8=SCL, PB9=SDA
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x20404768;  // 100kHz at 216MHz
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  HAL_I2C_Init(&hi2c1);
 }
 
 void Estop_toggle(void) {
@@ -310,15 +310,14 @@ void measure_v(measure_t* arr) {
 // Andrew
 void measure_batt(measure_t* adc_arr, uint16_t* mv_cells) {
   // ADC Measure
-  uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
-  adc_arr->mv_batt_adc = adc_to_voltage_mv(adc_battv) * DIV_17V;
+  int raw_val = adc_read(&hadc1, ADC_CHANNEL_10);
 
-  // BMS Measure
-  measure_batt_bms(mv_cells, 1);
-  adc_arr->mv_batt_bms = 0;
-  for (int i = 0; i < NUMCELLS; i++){
-	  adc_arr->mv_batt_bms += mv_cells[i];
-  }
+  float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
+  float batt_voltage = pin_voltage * 16.67f;  // placeholder factor
+  TRACE_INFO("%lf", batt_voltage);
+  // BMS Measure (todo)
+
+  TRACE_INFO("Batt: %.2f V\r\n", batt_voltage);
 }
 
 static float adc_to_current(uint16_t adc, float sensitivity) {
@@ -344,36 +343,7 @@ void measure_a(measure_t* arr) {
 // Turn off buses, arm, and motor
 void shutoff_sequence(void) {
   // Turn off motor and arm
-  motor_off();
-  HAL_Delay(100);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
-  arm_off();
-  HAL_Delay(100);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
 
-  // Turn off buses
-  bus_55v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-  bus_24v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-                  // difference
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-  bus_12v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);  // if 5V bus powers sensor measure first
-  bus_5v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);  // measure after to see if it shows value (depends if 5V powers
-                // sensors)
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
 }
 
 void power_sequence(void) {
@@ -436,9 +406,11 @@ void rsxTask(void *param) {
     	measure_v(&adc_measure);
     	measureVFlag = 1;
     }
-    if (rsx_task_received & MEASURE_B_CMD) {
-    	measure_batt(&adc_measure, batt_voltage_mv);
-    	measureBFlag = 1;
+    if (rsx_task_received & MEASURE_B_CMD){
+            //xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
+            //xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
+        	measure_batt_bms(batt_voltage_mv, 1);
+            
     }
     if (rsx_task_received & MEASURE_A_CMD) {
     	measure_a(&adc_measure);
@@ -547,7 +519,7 @@ void bmsUVProtectionTask(void *param) {
 #endif
        	}
 
-       	vTaskDelay(pdMS_TO_TICKS(5000));
+       	vTaskDelay(pdMS_TO_TICKS(10));
 
    	}
 

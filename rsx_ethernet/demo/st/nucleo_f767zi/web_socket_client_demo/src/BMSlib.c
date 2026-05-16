@@ -24,6 +24,7 @@ const uint8_t CLRCELL[4] = {0x7,0x11,0xc9,0xc0};
 volatile uint8_t spiTransferComplete = 0;
 volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  SPI_HandleTypeDef hspi1;
+ TaskHandle_t  spiSendTaskHandle;
  TaskHandle_t  bmsTaskHandle;
  DMA_HandleTypeDef hdma_spi1_tx;
  DMA_HandleTypeDef hdma_spi1_rx;
@@ -36,16 +37,13 @@ void measure_batt_bms(uint16_t* mv, int print){
   uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
   rdvab(cell_voltage_100uV, NUMCELLS);
 
-
+  if(print){
     HAL_Delay(100);
 
     for(int i=0; i < NUMCELLS; i++){
         mv[i] = cell_voltage_100uV[i] / 10; //get in mV
-        if(print){
         	TRACE_INFO("C%0d=%d ", i, mv[i]);
         }
-    }
-    if(print){
 		TRACE_INFO("mV\r\n");
 
 		TRACE_INFO("absolute voltages:");
@@ -56,8 +54,8 @@ void measure_batt_bms(uint16_t* mv, int print){
 		}
 		TRACE_INFO("V\r\n");
 		TRACE_INFO("Total voltage: %3.3fV", tmp);
-    }
 
+    }
 }
 
 void RSX_SPI_Init(void) {
@@ -169,6 +167,20 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically call
     }
 }
 
+void rsxSpiSendTask(void *arg){
+	uint32_t spi_task_received;
+	init_PEC15_Table();
+    for (;;) {
+        // Wait until any SPI command is posted
+        xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &spi_task_received, portMAX_DELAY);
+        //TRACE_INFO("RSX: SPI send loop\n");
+        if (spi_task_received & SPI_CMD_ADCV) {
+        	measure_batt_bms(batt_voltage_mv, 1);
+        }
+        xTaskNotify(bmsTaskHandle, SPI_TX_DONE, eSetBits);
+    }
+}
+
 void SPItransfer(const uint8_t* buffer, uint16_t size){ //send buffer
 	SPIx__CS_LOW();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
@@ -219,9 +231,9 @@ void wrcfg(uint8_t* data, int data_size){
 
 void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
  //4 uint8_ts sent, 8 uint8_ts received
-  uint8_t rxbuffer_a[12]={0}, rxbuffer_b[12]={0};
+  uint8_t rxbuffer_a[12], rxbuffer_b[12];
   SPItransferReceive(RDCVA,rxbuffer_a, 12);
-  uint8_t datareceived_a[6]={0};
+  uint8_t datareceived_a[6];
   memcpy(datareceived_a, &rxbuffer_a[4], 6);
   if(!checkPEC(rxbuffer_a[10], rxbuffer_a[11], datareceived_a, 6)){
     //TRACE_INFO("PEC failed\n");
