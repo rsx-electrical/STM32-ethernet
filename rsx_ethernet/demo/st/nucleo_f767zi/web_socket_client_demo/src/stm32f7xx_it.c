@@ -192,11 +192,12 @@ void SysTick_Handler(void)
   */
 
 /******************************************************************************/
-/*                 RSX SPI DMA interrupts                                   */
+/*                 RSX SPI DMA interrupts     (not used for hspi 3)          */
 /******************************************************************************/
+
 void SPI1_IRQHandler(void)
 {
-    HAL_SPI_IRQHandler(&hspi1);
+    HAL_SPI_IRQHandler(&hspi);
 }
 
 void DMA2_Stream0_IRQHandler(void)
