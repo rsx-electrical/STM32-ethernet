@@ -68,7 +68,7 @@
 #define APP_IPV6_SECONDARY_DNS "2001:4860:4860::8844"
 
 // Application configuration
-#define APP_WS_SERVER_NAME "192.168.0.10"
+#define APP_WS_SERVER_NAME "192.168.0.111"
 #define APP_WS_SERVER_PORT 8080
 #define APP_WS_SERVER_URI "/"
 
