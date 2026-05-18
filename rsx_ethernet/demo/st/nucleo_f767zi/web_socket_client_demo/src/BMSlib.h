@@ -32,6 +32,16 @@ extern volatile SPI_Command_t spiCmd;
 #define SPI_ANY_CMD   (1U << 0)
 #define SPI_TX_DONE   (1U << 3)
 
+// pins
+#define SPI3_MISO_PORT GPIOC
+#define SPI3_MISO_PIN GPIO_PIN_11
+#define SPI3_MOSI_PORT GPIOB
+#define SPI3_MOSI_PIN GPIO_PIN_2
+#define SPI3_SCK_PORT GPIOC
+#define SPI3_SCK_PIN GPIO_PIN_10
+#define SPI3_CS_PORT GPIOC
+#define SPI3_CS_PIN GPIO_PIN_9
+
 //void measure_batt_v(uint16_t* mv, int print);
 void RSX_SPI_Init(void);
 void wakeup(); //wake up spi interface (not working)

@@ -44,6 +44,7 @@ typedef struct {
 #define BUS_12V_PIN GPIO_PIN_13
 #define BUS_24V_PORT GPIOB
 #define BUS_24V_PIN GPIO_PIN_6
+//TODO: change to another pin
 #define BUS_55V_PORT GPIOB
 #define BUS_55V_PIN GPIO_PIN_2
 

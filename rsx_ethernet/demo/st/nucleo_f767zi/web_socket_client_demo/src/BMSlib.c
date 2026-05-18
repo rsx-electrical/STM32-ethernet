@@ -24,6 +24,7 @@ const uint8_t CLRCELL[4] = {0x7,0x11,0xc9,0xc0};
 volatile uint8_t spiTransferComplete = 0;
 volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
  SPI_HandleTypeDef hspi3;
+ //SPI_HandleTypeDef hspi1;
  TaskHandle_t  spiSendTaskHandle;
  TaskHandle_t  bmsTaskHandle;
 // DMA_HandleTypeDef hdma_spi1_tx;
@@ -35,11 +36,10 @@ void measure_batt_bms(uint16_t* mv, int print){
   adcv();
   //measure Voltage - adcv may take some time
   uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
+  HAL_Delay(200);
   rdvab(cell_voltage_100uV, NUMCELLS);
 
   if(print){
-    HAL_Delay(100);
-
     for(int i=0; i < NUMCELLS; i++){
         mv[i] = cell_voltage_100uV[i] / 10; //get in mV
         	TRACE_INFO("C%0d=%d ", i, mv[i]);
@@ -96,119 +96,119 @@ void RSX_SPI_Init(void) {
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 10;
 
-  HAL_StatusTypeDef status = HAL_SPI_Init(&hspi1);
-  if (status != HAL_OK) TRACE_INFO("RSX: BMS HAL_SPI_Init failed\n");
+  HAL_StatusTypeDef status1 = HAL_SPI_Init(&hspi1);
+  if (status1 != HAL_OK) TRACE_INFO("RSX: BMS HAL_SPI_Init failed\n");
 //*/
 
 	  hspi3.Instance = SPI3;
 	  hspi3.Init.Mode = SPI_MODE_MASTER;
 	  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-	  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
-	  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
-	  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+	  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+	  hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
+	  hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
 	  hspi3.Init.NSS = SPI_NSS_SOFT;
-	  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+	  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
 	  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
 	  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-	  hspi3.Init.CRCPolynomial = 7;
-	  hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-	  hspi3.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-	  if (HAL_SPI_Init(&hspi3) != HAL_OK)
-	  {
-		  if (status != HAL_OK) TRACE_INFO("RSX: BMS HAL_SPI_Init failed\n");
-	  }
+	  hspi3.Init.CRCPolynomial = 10;
+	  //hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+	  //hspi3.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+	  HAL_StatusTypeDef status3 = HAL_SPI_Init(&hspi3);
+	  if (status3 != HAL_OK) TRACE_INFO("RSX: BMS HAL_SPI_Init failed\n");
 }
 
 void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically calls HAL_SPI_MspInit(&hspi3) inside HAL_SPI_Init()
     GPIO_InitTypeDef GPIO_InitStruct = {0}, GPIO_InitStruct_CS = {0};
 
-//    if(spiHandle->Instance == SPI1)
-//    {
-//        /* SPI1 clock enable */
-//    	NUCLEO_SPIx_CLK_ENABLE();
-//        /* SPI1 GPIO configuration: SCK/ MISO/ MOSI */
-//    	NUCLEO_SPIx_SCK_GPIO_CLK_ENABLE();
-//    	NUCLEO_SPIx_MISO_MOSI_GPIO_CLK_ENABLE();
-//    	/* SPI1 GPIO configuration: CS */
-//    	NUCLEO_SPIx_CS_GPIO_CLK_ENABLE();
-//
-//        GPIO_InitStruct.Pin = NUCLEO_SPIx_SCK_PIN;
-//        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-//        GPIO_InitStruct.Pull = GPIO_NOPULL;
-//        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-//        GPIO_InitStruct.Alternate = NUCLEO_SPIx_SCK_AF;  // GPIO_AF5_SPI1, AF5 = SPI1
-//        HAL_GPIO_Init(NUCLEO_SPIx_SCK_GPIO_PORT, &GPIO_InitStruct); //GPIO_A for both SCK and MOSI and MISO
-//
-//        // MOSI (PB5)
-//        GPIO_InitStruct.Pin = GPIO_PIN_5;
-//        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-//        GPIO_InitStruct.Pull = GPIO_NOPULL;
-//        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-//        GPIO_InitStruct.Alternate = NUCLEO_SPIx_MISO_MOSI_AF;
-//        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-//
-//        // MISO (PA6)
-//        GPIO_InitStruct.Pin = NUCLEO_SPIx_MISO_PIN;
-//        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;      // AF_PP works for input as well
-//        GPIO_InitStruct.Pull = GPIO_NOPULL;          // or GPIO_PULLUP if desired
-//        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-//        GPIO_InitStruct.Alternate = NUCLEO_SPIx_MISO_MOSI_AF;
-//        HAL_GPIO_Init(NUCLEO_SPIx_MISO_MOSI_GPIO_PORT, &GPIO_InitStruct);
-//
-//        //config CS (PD14)
-//        GPIO_InitStruct_CS.Pin = NUCLEO_SPIx_CS_PIN;
-//        GPIO_InitStruct_CS.Mode = GPIO_MODE_OUTPUT_PP;
-//        GPIO_InitStruct_CS.Pull = GPIO_NOPULL;
-//        GPIO_InitStruct_CS.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-//        HAL_GPIO_Init(NUCLEO_SPIx_CS_GPIO_PORT, &GPIO_InitStruct_CS); //GPIO_D
-//        HAL_GPIO_WritePin(NUCLEO_SPIx_CS_GPIO_PORT, NUCLEO_SPIx_CS_PIN, GPIO_PIN_SET);
-//
-//        __HAL_RCC_DMA2_CLK_ENABLE();
-//        // 6) Configure TX DMA (SPI1_TX = DMA2_Stream3_Channel3)
-//          hdma_spi1_tx.Instance = DMA2_Stream3;
-//          hdma_spi1_tx.Init.Channel = DMA_CHANNEL_3;
-//          hdma_spi1_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
-//          hdma_spi1_tx.Init.PeriphInc = DMA_PINC_DISABLE;
-//          hdma_spi1_tx.Init.MemInc = DMA_MINC_ENABLE;
-//          hdma_spi1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-//          hdma_spi1_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-//          hdma_spi1_tx.Init.Mode = DMA_NORMAL;
-//          hdma_spi1_tx.Init.Priority = DMA_PRIORITY_HIGH;
-//          hdma_spi1_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-//
-//          HAL_DMA_Init(&hdma_spi1_tx);
-//
-//          __HAL_LINKDMA(&hspi1, hdmatx, hdma_spi1_tx);
-//
-//          // 7) Configure RX DMA (SPI1_RX = DMA2_Stream0_Channel3)
-//          hdma_spi1_rx.Instance = DMA2_Stream0;
-//          hdma_spi1_rx.Init.Channel = DMA_CHANNEL_3;
-//          hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
-//          hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
-//          hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;
-//          hdma_spi1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-//          hdma_spi1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-//          hdma_spi1_rx.Init.Mode = DMA_NORMAL;
-//          hdma_spi1_rx.Init.Priority = DMA_PRIORITY_HIGH;
-//          hdma_spi1_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-//
-//          HAL_DMA_Init(&hdma_spi1_rx);
-//
-//          __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
-//
-//          // 8) Enable NVIC for DMA
-//          HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0); // TX
-//          HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
-//
-//          HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0); // RX
-//          HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
-//
-//          // 9) SPI IRQ (optional if using interrupts)
-//          HAL_NVIC_SetPriority(SPI1_IRQn, 5, 0);
-//          HAL_NVIC_EnableIRQ(SPI1_IRQn);
-//    }
-	if(hspi->Instance==SPI3)
+    if(spiHandle->Instance == SPI1)
+    {
+        /* SPI1 clock enable */
+    	NUCLEO_SPIx_CLK_ENABLE();
+        /* SPI1 GPIO configuration: SCK/ MISO/ MOSI */
+    	NUCLEO_SPIx_SCK_GPIO_CLK_ENABLE();
+    	NUCLEO_SPIx_MISO_MOSI_GPIO_CLK_ENABLE();
+    	/* SPI1 GPIO configuration: CS */
+    	NUCLEO_SPIx_CS_GPIO_CLK_ENABLE();
+
+        GPIO_InitStruct.Pin = NUCLEO_SPIx_SCK_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = NUCLEO_SPIx_SCK_AF;  // GPIO_AF5_SPI1, AF5 = SPI1
+        HAL_GPIO_Init(NUCLEO_SPIx_SCK_GPIO_PORT, &GPIO_InitStruct); //GPIO_A for both SCK and MOSI and MISO
+
+        // MOSI (PB5)
+        GPIO_InitStruct.Pin = GPIO_PIN_5;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = NUCLEO_SPIx_MISO_MOSI_AF;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+        // MISO (PA6)
+        GPIO_InitStruct.Pin = NUCLEO_SPIx_MISO_PIN;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;      // AF_PP works for input as well
+        GPIO_InitStruct.Pull = GPIO_NOPULL;          // or GPIO_PULLUP if desired
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        GPIO_InitStruct.Alternate = NUCLEO_SPIx_MISO_MOSI_AF;
+        HAL_GPIO_Init(NUCLEO_SPIx_MISO_MOSI_GPIO_PORT, &GPIO_InitStruct);
+
+        //config CS (PD14)
+        GPIO_InitStruct_CS.Pin = NUCLEO_SPIx_CS_PIN;
+        GPIO_InitStruct_CS.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct_CS.Pull = GPIO_NOPULL;
+        GPIO_InitStruct_CS.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        HAL_GPIO_Init(NUCLEO_SPIx_CS_GPIO_PORT, &GPIO_InitStruct_CS); //GPIO_D
+        HAL_GPIO_WritePin(NUCLEO_SPIx_CS_GPIO_PORT, NUCLEO_SPIx_CS_PIN, GPIO_PIN_SET);
+
+        /*
+        __HAL_RCC_DMA2_CLK_ENABLE();
+        // 6) Configure TX DMA (SPI1_TX = DMA2_Stream3_Channel3)
+          hdma_spi1_tx.Instance = DMA2_Stream3;
+          hdma_spi1_tx.Init.Channel = DMA_CHANNEL_3;
+          hdma_spi1_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
+          hdma_spi1_tx.Init.PeriphInc = DMA_PINC_DISABLE;
+          hdma_spi1_tx.Init.MemInc = DMA_MINC_ENABLE;
+          hdma_spi1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+          hdma_spi1_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+          hdma_spi1_tx.Init.Mode = DMA_NORMAL;
+          hdma_spi1_tx.Init.Priority = DMA_PRIORITY_HIGH;
+          hdma_spi1_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+          HAL_DMA_Init(&hdma_spi1_tx);
+
+          __HAL_LINKDMA(&hspi1, hdmatx, hdma_spi1_tx);
+
+          // 7) Configure RX DMA (SPI1_RX = DMA2_Stream0_Channel3)
+          hdma_spi1_rx.Instance = DMA2_Stream0;
+          hdma_spi1_rx.Init.Channel = DMA_CHANNEL_3;
+          hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+          hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+          hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;
+          hdma_spi1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+          hdma_spi1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+          hdma_spi1_rx.Init.Mode = DMA_NORMAL;
+          hdma_spi1_rx.Init.Priority = DMA_PRIORITY_HIGH;
+          hdma_spi1_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+          HAL_DMA_Init(&hdma_spi1_rx);
+
+          __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
+
+          // 8) Enable NVIC for DMA
+          HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0); // TX
+          HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+
+          HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0); // RX
+          HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+
+          // 9) SPI IRQ (optional if using interrupts)
+          HAL_NVIC_SetPriority(SPI1_IRQn, 5, 0);
+          HAL_NVIC_EnableIRQ(SPI1_IRQn);
+          */
+    }
+	if(spiHandle->Instance==SPI3)
 		{
 		/* Peripheral clock enable */
 		__HAL_RCC_SPI3_CLK_ENABLE();
@@ -219,20 +219,37 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle){ //The HAL automatically call
 		PB2     ------> SPI3_MOSI
 		PC10     ------> SPI3_SCK
 		PC11     ------> SPI3_MISO
+		PC9      ------> SPI3_CS
 		*/
-		GPIO_InitStruct.Pin = GPIO_PIN_2;
+		GPIO_InitStruct.Pin = SPI3_MOSI_PIN;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 		GPIO_InitStruct.Alternate = GPIO_AF7_SPI3;
-		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		HAL_GPIO_Init(SPI3_MOSI_PORT, &GPIO_InitStruct);
 
-		GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
+		GPIO_InitStruct.Pin = SPI3_MISO_PIN;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 		GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+		HAL_GPIO_Init(SPI3_MISO_PORT, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = SPI3_SCK_PIN;
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+		GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+		HAL_GPIO_Init(SPI3_SCK_PORT, &GPIO_InitStruct);
+
+        //config CS (PC9)
+        GPIO_InitStruct_CS.Pin = SPI3_CS_PIN;
+        GPIO_InitStruct_CS.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct_CS.Pull = GPIO_NOPULL;
+        GPIO_InitStruct_CS.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        HAL_GPIO_Init(SPI3_CS_PORT, &GPIO_InitStruct_CS); //GPIO_C
+        HAL_GPIO_WritePin(SPI3_CS_PORT, SPI3_CS_PIN, GPIO_PIN_SET);
+
 	}
 
 }
@@ -252,16 +269,18 @@ void rsxSpiSendTask(void *arg){
 }
 
 void SPItransfer(const uint8_t* buffer, uint16_t size){ //send buffer
-	SPIx__CS_LOW();
+    HAL_GPIO_WritePin(SPI3_CS_PORT, SPI3_CS_PIN, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi3, (uint8_t*)buffer, size, 100);
-	SPIx__CS_HIGH();
+	//HAL_SPI_Transmit(&hspi1, (uint8_t*)buffer, size, 100);
+    HAL_GPIO_WritePin(SPI3_CS_PORT, SPI3_CS_PIN, GPIO_PIN_SET);
 }
 
 void SPItransferReceive(const uint8_t* buffer, uint8_t* rx, uint16_t size){
   //send buffer, receive rx at same time. rx and buffer have are "size" bytes
-	SPIx__CS_LOW();
+    HAL_GPIO_WritePin(SPI3_CS_PORT, SPI3_CS_PIN, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(&hspi3, (uint8_t*) buffer,rx, size, 100);
-	SPIx__CS_HIGH();
+	//HAL_SPI_TransmitReceive(&hspi1, (uint8_t*) buffer,rx, size, 100);
+    HAL_GPIO_WritePin(SPI3_CS_PORT, SPI3_CS_PIN, GPIO_PIN_SET);
 }
 
 
@@ -308,17 +327,20 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
   if(!checkPEC(rxbuffer_a[10], rxbuffer_a[11], datareceived_a, 6)){
     //TRACE_INFO("PEC failed\n");
   }
-//*
+
+  HAL_Delay(100);
+/*
   TRACE_INFO("Received 1: 0x");
   print_buffer(rxbuffer_a, 12);
-  //*/
+  */
   SPItransferReceive(RDCVB,rxbuffer_b, 12);
   uint8_t datareceived_b[6];
   memcpy(datareceived_b, &rxbuffer_b[4], 6);
   if(!checkPEC(rxbuffer_b[10], rxbuffer_b[11], datareceived_b, 6)){
-    //TRACE_INFO("PEC failed\n");
+    //TRACE_INFO("PEC failed: rxbuffer_b received \n");
   }
-//*
+  HAL_Delay(100);
+/*
   TRACE_INFO("Received 2: 0x");
   print_buffer(rxbuffer_b, 12);
   //*/

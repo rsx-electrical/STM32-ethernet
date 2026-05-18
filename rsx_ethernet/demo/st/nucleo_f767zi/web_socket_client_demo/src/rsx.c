@@ -59,8 +59,9 @@ void RSX_GPIO_Init(void) {
   GPIO_InitStruct.Pin = BUS_24V_PIN;
   HAL_GPIO_Init(BUS_24V_PORT, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = BUS_55V_PIN;
-  HAL_GPIO_Init(BUS_55V_PORT, &GPIO_InitStruct);
+  //TODO: enable after changing to antohre pin
+//  GPIO_InitStruct.Pin = BUS_55V_PIN;
+//  HAL_GPIO_Init(BUS_55V_PORT, &GPIO_InitStruct);
 
   // E-Stop Control
   GPIO_InitStruct.Pin = ESTOP_PIN;
@@ -409,7 +410,10 @@ void rsxTask(void *param) {
     if (rsx_task_received & MEASURE_B_CMD){
             //xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
             //xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
-        	measure_batt_bms(batt_voltage_mv, 1);
+    	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
+    		batt_voltage_mv[i] = 0;
+    	}
+        measure_batt_bms(batt_voltage_mv, 1);
             
     }
     if (rsx_task_received & MEASURE_A_CMD) {
@@ -507,6 +511,9 @@ void bmsUVProtectionTask(void *param) {
 	int length;
 	char buffer[100];
     for (;;){
+    	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
+    		batt_voltage_mv[i] = 0;
+    	}
         measure_batt_bms(batt_voltage_mv, 1);
         total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
        	length = sprintf(buffer, "%4d,%4d,%4d,%4d; total=%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3], total_v );
