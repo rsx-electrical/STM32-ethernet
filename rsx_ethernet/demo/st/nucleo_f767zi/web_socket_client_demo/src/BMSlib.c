@@ -30,13 +30,16 @@ volatile SPI_Command_t spiCmd = SPI_CMD_NONE;
 
 void measure_batt_bms(uint16_t* mv, int print){
   init_PEC15_Table();
-  // DO NOT CHANGE THIS -start
+  uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
+
+  // DO NOT CHANGE THIS : start ----------------------------------
   // timing comes from trial+error
+  // do adcv twice to make sure it works (idk why this helps)
+  adcv();
   adcv();
   //measure Voltage -
-  uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
   rdvab(cell_voltage_100uV, NUMCELLS);
-  // DO NOT CHANGE THIS -end
+  // DO NOT CHANGE THIS : end ----------------------------------
   if(print){
     HAL_Delay(100);
 
@@ -200,8 +203,6 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
 		  datareceived_a[i]=0;
 	  }
   }
-
-  HAL_Delay(100);
 //*
   TRACE_INFO("Received 1: 0x");
   print_buffer(rxbuffer_a, 12);
@@ -216,7 +217,6 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
 		  datareceived_b[i]=0;
 	  }
   }
-  HAL_Delay(100);
 //*
   TRACE_INFO("Received 2: 0x");
   print_buffer(rxbuffer_b, 12);
