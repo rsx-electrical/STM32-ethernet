@@ -34,31 +34,30 @@ void measure_batt_bms(uint16_t* mv, int print){
 
   // DO NOT CHANGE THIS : start ----------------------------------
   // timing comes from trial+error
-  // do adcv twice to make sure it works (idk why this helps)
   adcv();
-  adcv();
+  HAL_Delay(20);
   //measure Voltage -
   rdvab(cell_voltage_100uV, NUMCELLS);
   // DO NOT CHANGE THIS : end ----------------------------------
-  if(print){
-    HAL_Delay(100);
 
-    for(int i=0; i < NUMCELLS; i++){
-        mv[i] = cell_voltage_100uV[i] / 10; //get in mV
-        	TRACE_INFO("C%0d=%d ", i, mv[i]);
-        }
-		TRACE_INFO("mV\r\n");
 
-		TRACE_INFO("absolute voltages:");
-		float tmp=0;
-		for(int i=0; i < NUMCELLS; i++){
-			TRACE_INFO("%2.3f ", tmp + (float)(cell_voltage_100uV[i]) / 10000);
-			tmp = tmp + (float)(cell_voltage_100uV[i]) / 10000;
+
+	for(int i=0; i < NUMCELLS; i++){
+		mv[i] = cell_voltage_100uV[i] / 10; //get in mV
+		if (print) TRACE_INFO("C%0d=%d ", i, mv[i]);
 		}
-		TRACE_INFO("V\r\n");
-		TRACE_INFO("Total voltage: %3.3fV", tmp);
+    if (print)TRACE_INFO("mV\r\n");
 
-    }
+	//TRACE_INFO("absolute voltages:");
+	float tmp=0;
+	for(int i=0; i < NUMCELLS; i++){
+		//TRACE_INFO("%2.3f ", tmp + (float)(cell_voltage_100uV[i]) / 10000);
+		tmp = tmp + (float)(cell_voltage_100uV[i]) / 10000;
+	}
+	//TRACE_INFO("V\r\n");
+	if (print) TRACE_INFO("Total voltage: %3.3fV\n", tmp);
+
+
 }
 
 void RSX_SPI_Init(void) {
@@ -203,7 +202,7 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
 		  datareceived_a[i]=0;
 	  }
   }
-//*
+/*
   TRACE_INFO("Received 1: 0x");
   print_buffer(rxbuffer_a, 12);
   //*/
@@ -217,7 +216,7 @@ void rdvab(uint16_t* CV, int CVsize){ //get voltages, CV must has size of 6
 		  datareceived_b[i]=0;
 	  }
   }
-//*
+/*
   TRACE_INFO("Received 2: 0x");
   print_buffer(rxbuffer_b, 12);
   //*/

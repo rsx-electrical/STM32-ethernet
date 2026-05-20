@@ -1,7 +1,11 @@
 #ifndef RSX_H
 #define RSX_H
 
-#define DISABLE_UV_PROTECTION
+//#define DISABLE_UV_PROTECTION
+#define UV_SAMPLE_SIZE 5
+#define UV_THRESHOLD_MV 12000
+#define BMS_NEG_OFFSET_MV 500
+
 
 #include <stdlib.h>
 

@@ -510,24 +510,28 @@ void bmsUVProtectionTask(void *param) {
 	error_t error;
 	int length;
 	char buffer[100];
+	int UV_counter = 0;
 #ifndef DISABLE_UV_PROTECTION
     for (;;){
     	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
     		batt_voltage_mv[i] = 0;
     	}
-        measure_batt_bms(batt_voltage_mv, 1);
+        measure_batt_bms(batt_voltage_mv, 0);
         total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
-       	length = sprintf(buffer, "%4d,%4d,%4d,%4d; total=%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3], total_v );
-       	//TRACE_INFO("sending  %s\r\n", buffer);
-       	if (total_v < 12000 && total_v != 0 ) {
+       	if (total_v < (UV_THRESHOLD_MV-BMS_NEG_OFFSET_MV) && total_v != 0 ) {
        		TRACE_INFO("UV! UV! UV!\r\n");
-
-       		Estop_toggle();
-       		uvEventFlag=1;
-
+       		UV_counter ++;
+       		if(UV_counter > UV_SAMPLE_SIZE){
+				Estop_toggle();
+				uvEventFlag=1;
+       		}
+       	}
+       	else {
+       		//reset counter
+       		UV_counter = 0;
        	}
 
-       	vTaskDelay(pdMS_TO_TICKS(10));
+       	vTaskDelay(pdMS_TO_TICKS(5000));
 
    	}
 #endif
