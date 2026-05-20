@@ -400,7 +400,7 @@ error_t webSocketClientTest(void) {
 
          // Format event message
          length = sprintf(buffer, "User button pressed!");
-		TRACE_INFO("buttonEventFlag set, sending  %s\r\n", buffer);
+
 
          // Debug message
          TRACE_INFO("WebSocket: Sending message (%" PRIuSIZE " bytes)...\r\n",
@@ -852,16 +852,16 @@ int_t main(void) {
     TRACE_ERROR("Failed to create task!\r\n");
   }
 
-#ifndef DISABLE_UV_PROTECTION
-  bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
-  if (bmsUVProtectionHandle == NULL) {
-    // Debug message
-    TRACE_ERROR("Failed to create task!\r\n");
-  }
-#endif
+ #ifndef DISABLE_UV_PROTECTION
+   bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
+   if (bmsUVProtectionHandle == NULL) {
+     // Debug message
+     TRACE_ERROR("Failed to create task!\r\n");
+   }
+ #endif
   // Create temperature sensor task
    //ads1015TempTaskCreate();   // <--- ADD THIS LINE
-
+  
    // Start the execution of tasks
    osStartKernel();
 

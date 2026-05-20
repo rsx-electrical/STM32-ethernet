@@ -9,7 +9,7 @@ extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t batt_voltage_mv[NUMCELLS];
 extern measure_t adc_measure;
-TaskHandle_t  rsx_task_handle;
+TaskHandle_t  rsx_task_handle; //plz don't move
 
 //LED states (1 is on, 0 is off)
 bool_t led_red_on = 0;
@@ -60,8 +60,9 @@ void RSX_GPIO_Init(void) {
   GPIO_InitStruct.Pin = BUS_24V_PIN;
   HAL_GPIO_Init(BUS_24V_PORT, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = BUS_55V_PIN;
-  HAL_GPIO_Init(BUS_55V_PORT, &GPIO_InitStruct);
+  //TODO: enable after changing to antohre pin
+//  GPIO_InitStruct.Pin = BUS_55V_PIN;
+//  HAL_GPIO_Init(BUS_55V_PORT, &GPIO_InitStruct);
 
   // E-Stop Control
   GPIO_InitStruct.Pin = ESTOP_PIN;
@@ -345,36 +346,7 @@ void measure_a(measure_t* arr) {
 // Turn off buses, arm, and motor
 void shutoff_sequence(void) {
   // Turn off motor and arm
-  motor_off();
-  HAL_Delay(100);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
-  arm_off();
-  HAL_Delay(100);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
 
-  // Turn off buses
-  bus_55v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-  bus_24v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-                  // difference
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-  bus_12v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);  // if 5V bus powers sensor measure first
-  bus_5v_off();
-  HAL_Delay(100);
-  measure_v(&adc_measure);  // measure after to see if it shows value (depends if 5V powers
-                // sensors)
-  measure_a(&adc_measure);
-  measure_batt(&adc_measure, batt_voltage_mv);
 }
 
 void power_sequence(void) {
@@ -389,26 +361,6 @@ void power_sequence(void) {
   motor_on();
 }
 
-void rsx_test(void) {
-  // Ensure buses, arm, and motor are off
-  shutoff_sequence();
-
-  // Turn on all
-  power_sequence();
-  shutoff_sequence();
-  power_sequence();
-  shutoff_sequence();
-  power_sequence();
-  shutoff_sequence();
-  power_sequence();
-  shutoff_sequence();
-
-  HAL_Delay(10000);
-  osDelayTask(10000);
-
-  // Turn off all
-  shutoff_sequence();
-}
 
 
 int parse_int(char_t *received_cmd, int *out) {
@@ -457,9 +409,12 @@ void rsxTask(void *param) {
     	measure_v(&adc_measure);
     	measureVFlag = 1;
     }
-    if (rsx_task_received & MEASURE_B_CMD) {
-    	measure_batt(&adc_measure, batt_voltage_mv);
-    	measureBFlag = 1;
+    if (rsx_task_received & MEASURE_B_CMD){
+    	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
+    		batt_voltage_mv[i] = 0;
+    	}
+        measure_batt_bms(batt_voltage_mv, 1);
+        measureBFlag = 1;
     }
     if (rsx_task_received & MEASURE_A_CMD) {
     	measure_a(&adc_measure);
@@ -555,23 +510,31 @@ void bmsUVProtectionTask(void *param) {
 	error_t error;
 	int length;
 	char buffer[100];
-    for (;;){
-        measure_batt_bms(batt_voltage_mv, 1);
-        total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
-       	length = sprintf(buffer, "%4d,%4d,%4d,%4d; total=%4d", batt_voltage_mv[0], batt_voltage_mv[1], batt_voltage_mv[2], batt_voltage_mv[3], total_v );
-       	//TRACE_INFO("sending  %s\r\n", buffer);
-       	if (total_v < 12000 && total_v != 0 ) {
-       		TRACE_INFO("UV! UV! UV!\r\n");
+	int UV_counter = 0;
 #ifndef DISABLE_UV_PROTECTION
-       		Estop_toggle();
-       		uvEventFlag=1;
-#endif
+    for (;;){
+    	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
+    		batt_voltage_mv[i] = 0;
+    	}
+        measure_batt_bms(batt_voltage_mv, 0);
+        total_v = batt_voltage_mv[0]+batt_voltage_mv[1]+batt_voltage_mv[2]+batt_voltage_mv[3];
+       	if (total_v < (UV_THRESHOLD_MV-BMS_NEG_OFFSET_MV) && total_v != 0 ) {
+       		TRACE_INFO("UV! UV! UV!\r\n");
+       		UV_counter ++;
+       		if(UV_counter > UV_SAMPLE_SIZE){
+				Estop_toggle();
+				uvEventFlag=1;
+       		}
+       	}
+       	else {
+       		//reset counter
+       		UV_counter = 0;
        	}
 
        	vTaskDelay(pdMS_TO_TICKS(5000));
 
    	}
-
+#endif
 }
 
 bool_t is_all_zero(bool_t *arr, size_t len){

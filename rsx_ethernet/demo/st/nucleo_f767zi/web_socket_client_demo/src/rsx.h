@@ -1,7 +1,11 @@
 #ifndef RSX_H
 #define RSX_H
 
-#define DISABLE_UV_PROTECTION
+//#define DISABLE_UV_PROTECTION
+#define UV_SAMPLE_SIZE 5
+#define UV_THRESHOLD_MV 12000
+#define BMS_NEG_OFFSET_MV 500
+
 
 #include <stdlib.h>
 
@@ -44,6 +48,7 @@ typedef struct {
 #define BUS_12V_PIN GPIO_PIN_13
 #define BUS_24V_PORT GPIOB
 #define BUS_24V_PIN GPIO_PIN_6
+//TODO: change to another pin
 #define BUS_55V_PORT GPIOB
 #define BUS_55V_PIN GPIO_PIN_2
 
@@ -114,7 +119,7 @@ void RSX_GPIO_Init(void);
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
 bool_t is_all_zero(bool_t *arr, size_t len);
 
-extern TaskHandle_t  rsx_task_handle;
+extern TaskHandle_t  rsx_task_handle; //don't move plz
 extern WebSocket *webSocket;
 
 #define MEASURE_V_CMD (1U << 1)

@@ -16,7 +16,7 @@ async def start_server(window):
         8080
     ):
 
-        print("Server running on ws://192.168.0.10:8080")
+        print("Server running on ws://192.168.0.111:8080")
 
         # Start terminal sender task
         asyncio.create_task(server.stdin_sender())
