@@ -312,14 +312,15 @@ void measure_v(measure_t* arr) {
 // Andrew
 void measure_batt(measure_t* adc_arr, uint16_t* mv_cells) {
   // ADC Measure
-  int raw_val = adc_read(&hadc1, ADC_CHANNEL_10);
+  uint32_t adc_battv = adc_read(&hadc1, ADC_CHANNEL_10);  // ADC123_IN10
+  adc_arr->mv_batt_adc = adc_to_voltage_mv(adc_battv) * DIV_17V;
 
-  float pin_voltage = ((float)raw_val / 4095.0f) * 3.3f;
-  float batt_voltage = pin_voltage * 16.67f;  // placeholder factor
-  TRACE_INFO("%lf", batt_voltage);
-  // BMS Measure (todo)
-
-  TRACE_INFO("Batt: %.2f V\r\n", batt_voltage);
+  // BMS Measure
+  measure_batt_bms(mv_cells, 1);
+  adc_arr->mv_batt_bms = 0;
+  for (int i = 0; i < NUMCELLS; i++){
+	  adc_arr->mv_batt_bms += mv_cells[i];
+  }
 }
 
 static float adc_to_current(uint16_t adc, float sensitivity) {
@@ -409,13 +410,11 @@ void rsxTask(void *param) {
     	measureVFlag = 1;
     }
     if (rsx_task_received & MEASURE_B_CMD){
-            //xTaskNotify(spiSendTaskHandle, SPI_CMD_ADCV, eSetBits);
-            //xTaskNotifyWait( 0, SPI_TX_DONE,  NULL, portMAX_DELAY);
     	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
     		batt_voltage_mv[i] = 0;
     	}
         measure_batt_bms(batt_voltage_mv, 1);
-            
+        measureBFlag = 1;
     }
     if (rsx_task_received & MEASURE_A_CMD) {
     	measure_a(&adc_measure);
