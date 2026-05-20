@@ -117,7 +117,6 @@ I2C_HandleTypeDef hi2c1;
 
 TaskHandle_t  bmsUVProtectionHandle;
 TaskHandle_t  ethernetHandle;
-TaskHandle_t  rsx_task_handle;
 uint16_t batt_voltage_mv[NUMCELLS];
 measure_t adc_measure;
 
@@ -963,13 +962,13 @@ int_t main(void) {
   }
 
 
-// #ifndef DISABLE_UV_PROTECTION
-//   bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
-//   if (bmsUVProtectionHandle == NULL) {
-//     // Debug message
-//     TRACE_ERROR("Failed to create task!\r\n");
-//   }
-// #endif
+ #ifndef DISABLE_UV_PROTECTION
+   bmsUVProtectionHandle = osCreateTask("bms_uv_protection", bmsUVProtectionTask, NULL, &taskParams);
+   if (bmsUVProtectionHandle == NULL) {
+     // Debug message
+     TRACE_ERROR("Failed to create task!\r\n");
+   }
+ #endif
   // Create temperature sensor task
    //ads1015TempTaskCreate();   // <--- ADD THIS LINE
   spiSendTaskHandle = osCreateTask("spi_send", rsxSpiSendTask, NULL, &taskParams);

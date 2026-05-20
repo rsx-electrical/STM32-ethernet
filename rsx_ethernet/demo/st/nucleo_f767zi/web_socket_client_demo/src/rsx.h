@@ -1,7 +1,7 @@
 #ifndef RSX_H
 #define RSX_H
 
-//#define DISABLE_UV_PROTECTION
+#define DISABLE_UV_PROTECTION
 
 #include <stdlib.h>
 
@@ -115,7 +115,7 @@ void RSX_GPIO_Init(void);
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
 bool_t is_all_zero(bool_t *arr, size_t len);
 
-extern TaskHandle_t  rsx_task_handle;
+extern TaskHandle_t  rsx_task_handle; //don't move plz
 extern WebSocket *webSocket;
 
 #define MEASURE_V_CMD (1U << 1)

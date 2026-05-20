@@ -33,7 +33,7 @@ void measure_batt_bms(uint16_t* mv, int print){
   adcv();
   //measure Voltage - adcv may take some time
   uint16_t cell_voltage_100uV[NUMCELLS]; //rdvab fills this arrays with ints with units of 100uV
-  HAL_Delay(200);
+  HAL_Delay(5);
   rdvab(cell_voltage_100uV, NUMCELLS);
 
   if(print){
@@ -130,7 +130,7 @@ void rsxSpiSendTask(void *arg){
     for (;;) {
         // Wait until any SPI command is posted
         xTaskNotifyWait( 0, 0xFFFFFFFFUL,  &spi_task_received, portMAX_DELAY);
-        //TRACE_INFO("RSX: SPI send loop\n");
+        TRACE_INFO("RSX: SPI send loop\n");
         if (spi_task_received & SPI_CMD_ADCV) {
         	measure_batt_bms(batt_voltage_mv, 1);
         }

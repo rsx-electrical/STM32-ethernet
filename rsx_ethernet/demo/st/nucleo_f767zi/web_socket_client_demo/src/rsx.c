@@ -9,6 +9,7 @@ extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 extern uint16_t batt_voltage_mv[NUMCELLS];
 extern measure_t adc_measure;
+TaskHandle_t  rsx_task_handle; //plz don't move
 
 //LED states (1 is on, 0 is off)
 bool_t led_red_on = 0;
@@ -510,6 +511,7 @@ void bmsUVProtectionTask(void *param) {
 	error_t error;
 	int length;
 	char buffer[100];
+#ifndef DISABLE_UV_PROTECTION
     for (;;){
     	for (int i = 0; i < sizeof(batt_voltage_mv); i++){
     		batt_voltage_mv[i] = 0;
@@ -520,16 +522,16 @@ void bmsUVProtectionTask(void *param) {
        	//TRACE_INFO("sending  %s\r\n", buffer);
        	if (total_v < 12000 && total_v != 0 ) {
        		TRACE_INFO("UV! UV! UV!\r\n");
-#ifndef DISABLE_UV_PROTECTION
+
        		Estop_toggle();
        		uvEventFlag=1;
-#endif
+
        	}
 
        	vTaskDelay(pdMS_TO_TICKS(10));
 
    	}
-
+#endif
 }
 
 bool_t is_all_zero(bool_t *arr, size_t len){

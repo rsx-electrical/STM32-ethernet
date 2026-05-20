@@ -19,8 +19,6 @@ extern const uint8_t CLRCELL[4];
 extern TaskHandle_t  spiSendTaskHandle;
 extern TaskHandle_t  bmsTaskHandle;
 extern SPI_HandleTypeDef hspi3;
-//extern DMA_HandleTypeDef hdma_spi1_tx;
-//extern DMA_HandleTypeDef hdma_spi1_rx;
 
 typedef enum {
     SPI_CMD_NONE = 0,
