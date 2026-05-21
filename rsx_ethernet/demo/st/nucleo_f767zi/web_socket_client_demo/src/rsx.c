@@ -16,6 +16,10 @@ bool_t led_red_on = 0;
 bool_t led_green_on = 0;
 bool_t led_blue_on = 0;
 
+// Latched on boot: true only if the previous reset was a real power cycle
+// (POR/BOR), not a soft reset, NRST press, or watchdog reset.
+bool_t power_cycle_detected = 0;
+
 
 float vref_val = 3.3f;
 float vref_val_mv = 3300.0f;
@@ -27,6 +31,22 @@ extern I2C_HandleTypeDef hi2c1;
  */
 void RSX_GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* 0. Latch reset cause BEFORE clearing the RCC reset flags.
+     PORRSTF / BORRSTF are only set when the chip actually lost power
+     (or browned out). They are NOT cleared by hardware on subsequent
+     resets, so we must clear them ourselves; otherwise every reset
+     after the first power-up would look like a power cycle. */
+  power_cycle_detected =
+      (__HAL_RCC_GET_FLAG(RCC_FLAG_PORRST) != RESET) ||
+      (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET);
+  __HAL_RCC_CLEAR_RESET_FLAGS();
+
+  if (power_cycle_detected) {
+    TRACE_INFO("Reset cause: POWER CYCLE (POR/BOR) -- will auto power_sequence()\r\n");
+  } else {
+    TRACE_INFO("Reset cause: soft/NRST/watchdog -- skipping auto power_sequence()\r\n");
+  }
 
   /* 1. Enable Peripheral Clocks for all used Ports */
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -392,7 +412,13 @@ int parse_int(char_t *received_cmd, int *out) {
 
 void rsxTask(void *param) {
 	// set initial states:
-	power_sequence();
+	// Only auto-run power_sequence() if the chip actually power-cycled.
+	// Soft resets / NRST presses / watchdog resets leave buses, arm, and
+	// motor OFF so a developer reflash doesn't suddenly energize loads.
+	if (power_cycle_detected) {
+		TRACE_INFO("Power cycle detected -- running power_sequence()\r\n");
+		power_sequence();
+	}
 	led_red_on = 0;
 	led_green_on = 0;
 	led_blue_on = 0;

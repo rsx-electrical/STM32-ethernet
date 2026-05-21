@@ -122,6 +122,11 @@ bool_t is_all_zero(bool_t *arr, size_t len);
 extern TaskHandle_t  rsx_task_handle; //don't move plz
 extern WebSocket *webSocket;
 
+// Set in RSX_GPIO_Init(): true only if the most recent reset was a real
+// power cycle (POR/BOR). Cleared (false) for soft resets, NRST presses,
+// and watchdog resets. Used to gate auto power_sequence() at boot.
+extern bool_t power_cycle_detected;
+
 #define MEASURE_V_CMD (1U << 1)
 #define	MEASURE_B_CMD (1U << 2)
 #define	MEASURE_A_CMD (1U << 3)
