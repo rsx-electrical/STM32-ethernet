@@ -240,7 +240,15 @@ void bus_55v_off(void) {
   HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
 }
 
-void LED_G_on() { HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET); }
+void LED_G_on() {
+	// flashing green LED
+	while(led_green_on){
+		HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
+	 	HAL_Delay(1000);
+	 	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
+	 	HAL_Delay(1000);
+	}
+}
 
 void LED_G_off() { HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET); }
 
