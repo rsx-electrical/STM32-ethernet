@@ -256,26 +256,31 @@ void greenLEDTask(void *param){
 
 }
 
-//void LED_G_on() {
-//	led_green_on = 1;
-//	// flashing green LED
-//	while(led_green_on){
-//		HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
-//	 	HAL_Delay(1000);
-//	 	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
-//	 	HAL_Delay(1000);
-//	}
-//}
 
-void LED_G_off() { HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET); }
+void LED_G_off() {
+	led_green_on=0;
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
+}
 
-void LED_B_on() { HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_SET); }
+void LED_B_on() {
+	led_blue_on=1;
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_SET);
+}
 
-void LED_B_off() { HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_RESET); }
+void LED_B_off() {
+	led_blue_on=0;
+	HAL_GPIO_WritePin(LED_GB_PORT, LED_B_PIN, GPIO_PIN_RESET);
+}
 
-void LED_R_on() { HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_SET); }
+void LED_R_on() {
+	led_red_on=1;
+	HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_SET);
+}
 
-void LED_R_off() { HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_RESET); }
+void LED_R_off() {
+	led_red_on=0;
+	HAL_GPIO_WritePin(LED_R_PORT, LED_R_PIN, GPIO_PIN_RESET);
+}
 
 void calibrate_adc(void) {
   TRACE_INFO("Starting ADC Calibration using VREFINT...\r\n");
@@ -496,14 +501,12 @@ void rsxTask(void *param) {
     if (rsx_task_received & R_LED_TOGGLE) {
     	if(led_red_on){
     		LED_R_off();
-    		led_red_on = 0;
     		printStatusFlag[12] = 1;
     	} else {
     		LED_B_off();
     		LED_G_off();
 
     		LED_R_on();
-    		led_red_on = 1;
     		printStatusFlag[13] = 1;
     		//TODO: print blue green off
     	}
@@ -511,13 +514,11 @@ void rsxTask(void *param) {
     if (rsx_task_received & G_LED_TOGGLE) {
     	if(led_green_on){
     		LED_G_off();
-    		led_green_on = 0;
     		printStatusFlag[14] = 1;
     	} else {
     		LED_R_off();
     		LED_B_off();
 
-    		//LED_G_on();
     		led_green_on = 1;
     		xTaskNotify(greenLEDTaskHandle, LED_GREEN_SIGNAL, eSetBits);
     		printStatusFlag[15] = 1;
@@ -526,14 +527,12 @@ void rsxTask(void *param) {
     if (rsx_task_received & B_LED_TOGGLE) {
     	if(led_blue_on){
     		LED_B_off();
-    		led_blue_on = 0;
     		printStatusFlag[16] = 1;
     	} else {
     		LED_R_off();
     		LED_G_off();
 
     		LED_B_on();
-    		led_blue_on = 1;
     		printStatusFlag[17] = 1;
     	}
     }
