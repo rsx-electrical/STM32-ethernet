@@ -10,6 +10,7 @@ extern ADC_HandleTypeDef hadc3;
 extern uint16_t batt_voltage_mv[NUMCELLS];
 extern measure_t adc_measure;
 TaskHandle_t  rsx_task_handle; //plz don't move
+TaskHandle_t greenLEDTaskHandle;
 
 //LED states (1 is on, 0 is off)
 bool_t led_red_on = 0;
@@ -240,15 +241,31 @@ void bus_55v_off(void) {
   HAL_GPIO_WritePin(BUS_55V_PORT, BUS_55V_PIN, GPIO_PIN_RESET);
 }
 
-void LED_G_on() {
-	// flashing green LED
-	while(led_green_on){
-		HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
-	 	HAL_Delay(1000);
-	 	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
-	 	HAL_Delay(1000);
+void greenLEDTask(void *param){
+	uint32_t greenLEDReceived;
+	for (;;){
+		xTaskNotifyWait(0, 0xFFFFFFFFUL, &greenLEDReceived, portMAX_DELAY);
+		TRACE_INFO("greenLEDReceived notify bits = 0x%lx, bool=%d\r\n", greenLEDReceived, led_green_on);
+		while (led_green_on){
+			HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
+			HAL_Delay(1000);
+			HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
+			HAL_Delay(1000);
+		}
 	}
+
 }
+
+//void LED_G_on() {
+//	led_green_on = 1;
+//	// flashing green LED
+//	while(led_green_on){
+//		HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_SET);
+//	 	HAL_Delay(1000);
+//	 	HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET);
+//	 	HAL_Delay(1000);
+//	}
+//}
 
 void LED_G_off() { HAL_GPIO_WritePin(LED_GB_PORT, LED_G_PIN, GPIO_PIN_RESET); }
 
@@ -482,9 +499,13 @@ void rsxTask(void *param) {
     		led_red_on = 0;
     		printStatusFlag[12] = 1;
     	} else {
+    		LED_B_off();
+    		LED_G_off();
+
     		LED_R_on();
     		led_red_on = 1;
     		printStatusFlag[13] = 1;
+    		//TODO: print blue green off
     	}
     }
     if (rsx_task_received & G_LED_TOGGLE) {
@@ -493,8 +514,12 @@ void rsxTask(void *param) {
     		led_green_on = 0;
     		printStatusFlag[14] = 1;
     	} else {
-    		LED_G_on();
+    		LED_R_off();
+    		LED_B_off();
+
+    		//LED_G_on();
     		led_green_on = 1;
+    		xTaskNotify(greenLEDTaskHandle, LED_GREEN_SIGNAL, eSetBits);
     		printStatusFlag[15] = 1;
     	}
     }
@@ -504,6 +529,9 @@ void rsxTask(void *param) {
     		led_blue_on = 0;
     		printStatusFlag[16] = 1;
     	} else {
+    		LED_R_off();
+    		LED_G_off();
+
     		LED_B_on();
     		led_blue_on = 1;
     		printStatusFlag[17] = 1;

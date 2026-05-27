@@ -1,7 +1,7 @@
 #ifndef RSX_H
 #define RSX_H
 
-//#define DISABLE_UV_PROTECTION
+#define DISABLE_UV_PROTECTION
 #define UV_SAMPLE_SIZE 5
 #define UV_THRESHOLD_MV 12000
 #define BMS_NEG_OFFSET_MV 500
@@ -115,11 +115,13 @@ void shutoff_sequence(void);
 int parse_int(char_t *received_cmd, int *out);
 void rsxTask(void *param);
 void bmsUVProtectionTask(void *param);
+void greenLEDTask(void *param);
 void RSX_GPIO_Init(void);
 static uint32_t adc_read(ADC_HandleTypeDef *hadc, uint32_t channel);
 bool_t is_all_zero(bool_t *arr, size_t len);
 
 extern TaskHandle_t  rsx_task_handle; //don't move plz
+extern TaskHandle_t greenLEDTaskHandle;
 extern WebSocket *webSocket;
 
 #define MEASURE_V_CMD (1U << 1)
@@ -141,6 +143,8 @@ extern WebSocket *webSocket;
 #define R_LED_TOGGLE	(1U << 17)
 #define G_LED_TOGGLE	(1U << 18)
 #define B_LED_TOGGLE	(1U << 19)
+
+#define LED_GREEN_SIGNAL   (1U << 3)
 
 // 12V 24V 55V and battery V
 #define NUM_VOLTAGES 4

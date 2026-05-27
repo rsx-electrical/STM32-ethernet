@@ -861,7 +861,12 @@ int_t main(void) {
  #endif
   // Create temperature sensor task
    //ads1015TempTaskCreate();   // <--- ADD THIS LINE
-  
+
+   greenLEDTaskHandle = osCreateTask("greenLED", greenLEDTask, NULL, &taskParams);
+   if (greenLEDTaskHandle == NULL) {
+     // Debug message
+     TRACE_ERROR("Failed to create greenLEDTask! \r\n");
+   }
    // Start the execution of tasks
    osStartKernel();
 
