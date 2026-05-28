@@ -143,6 +143,7 @@ extern WebSocket *webSocket;
 #define R_LED_TOGGLE	(1U << 17)
 #define G_LED_TOGGLE	(1U << 18)
 #define B_LED_TOGGLE	(1U << 19)
+#define STM_RESET_CMD		(1U << 20)
 
 #define LED_GREEN_SIGNAL   (1U << 3)
 

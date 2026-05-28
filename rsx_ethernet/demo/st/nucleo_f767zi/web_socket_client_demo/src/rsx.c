@@ -536,6 +536,10 @@ void rsxTask(void *param) {
     		printStatusFlag[17] = 1;
     	}
     }
+    if (rsx_task_received & STM_RESET_CMD) {
+    	HAL_Delay(100);
+    	NVIC_SystemReset();
+    }
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }

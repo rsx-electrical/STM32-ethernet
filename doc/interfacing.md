@@ -80,4 +80,8 @@ response = Green LED On/Off
 <br>
 name = B_LED_TOGGLE
 cmd = 19
-response = Blue LED On/Off
+response = Blue LED On/Off  
+<br>
+name = STM_RESET_CMD  
+cmd = 20  
+response = (nothing, but should see connected!!! again)
