@@ -27,6 +27,7 @@ class ToggleButtonsWindow(QWidget):
             "Green": False,
             "Blue": False,
             "Red": False,
+            "Reset": False
         }
 
     
@@ -61,7 +62,7 @@ class ToggleButtonsWindow(QWidget):
         #top toggle buttons
         row_layout = QHBoxLayout()  
   # Button names
-        button_names = ["Motor", "12V", "55V", "Green", "Blue", "Red"]
+        button_names = ["Motor", "12V", "55V", "Green", "Blue", "Red", "Reset"]
         self.buttons = []
 
         # Create 6 circular toggle buttons
@@ -199,7 +200,8 @@ class ToggleButtonsWindow(QWidget):
         "Green": 18,
         "Blue": 19,
         "Red": 17,
-        "ESTOP": 16   # Special case: always send 16
+        "ESTOP": 16,   # Special case: always send 16,
+        "Reset": 20
     }
 
     
